@@ -1,0 +1,7 @@
+Content/GKnight/** !text !filter !merge !diff
+Content/MedievalDungeon/** !text !filter !merge !diff
+Content/ProIconPack/** !text !filter !merge !diff
+*.umap !text !filter !merge !diff
+Content/Characters/** !text !filter !merge !diff
+Content/FX_Effect/** !text !filter !merge !diff
+Content/Sounds/** !text !filter !merge !diff
