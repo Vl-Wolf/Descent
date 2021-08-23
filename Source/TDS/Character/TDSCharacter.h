@@ -71,7 +71,7 @@ public:
 
 	//Demo
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Demo")
-		TSubclassOf<AWeaponDefault> InitWeaponClass = nullptr;
+		FName InitWeaponName;
 	
 	//Input
 	UFUNCTION()
@@ -98,7 +98,18 @@ public:
 	UFUNCTION(BlueprintCallable)
 		AWeaponDefault* GetCurrentWeapon();
 	UFUNCTION(BlueprintCallable)
-		void InitWeapon();
+		void InitWeapon(FName IdWeaponName);
+	UFUNCTION(BlueprintCallable)
+		void TryReloadWeapon();
+	UFUNCTION()
+		void WeaponReloadStart(UAnimMontage* Anim);
+	UFUNCTION()
+		void WeaponReloadEnd();
+	UFUNCTION(BlueprintNativeEvent)
+		void WeaponReloadStart_BP(UAnimMontage* Anim);
+	UFUNCTION(BlueprintNativeEvent)
+		void WeaponReloadEnd_BP();
+
 
 	UFUNCTION(BlueprintCallable)
 		UDecalComponent* GetCursorToWorld();

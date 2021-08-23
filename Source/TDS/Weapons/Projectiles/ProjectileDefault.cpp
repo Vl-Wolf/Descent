@@ -2,6 +2,8 @@
 
 
 #include "ProjectileDefault.h"
+#include "PhysicalMaterials/PhysicalMaterial.h"
+#include "Kismet/GameplayStatics.h"
 
 // Sets default values
 AProjectileDefault::AProjectileDefault()
@@ -12,10 +14,6 @@ AProjectileDefault::AProjectileDefault()
 	BulletCollisionSphere = CreateDefaultSubobject<USphereComponent>(TEXT("Collision Sphere"));
 	BulletCollisionSphere->SetSphereRadius(16.0f);
 	
-	BulletCollisionSphere->OnComponentHit.AddDynamic(this, &AProjectileDefault::BulletCollisionSphereHit);
-	BulletCollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &AProjectileDefault::BulletCollisionSphereBeginOverlap);
-	BulletCollisionSphere->OnComponentEndOverlap.AddDynamic(this, &AProjectileDefault::BulletCollisionSphereEndOverlap);
-
 	BulletCollisionSphere->bReturnMaterialOnMove = true;
 
 	BulletCollisionSphere->SetCanEverAffectNavigation(false);
@@ -33,6 +31,7 @@ AProjectileDefault::AProjectileDefault()
 	BulletProjectileMovement->UpdatedComponent = RootComponent;
 	BulletProjectileMovement->InitialSpeed = 1.f;
 	BulletProjectileMovement->MaxSpeed = 0.f;
+
 	BulletProjectileMovement->bRotationFollowsVelocity = true;
 	BulletProjectileMovement->bShouldBounce = true;
 }
@@ -42,6 +41,10 @@ void AProjectileDefault::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	BulletCollisionSphere->OnComponentHit.AddDynamic(this, &AProjectileDefault::BulletCollisionSphereHit);
+	BulletCollisionSphere->OnComponentBeginOverlap.AddDynamic(this, &AProjectileDefault::BulletCollisionSphereBeginOverlap);
+	BulletCollisionSphere->OnComponentEndOverlap.AddDynamic(this, &AProjectileDefault::BulletCollisionSphereEndOverlap);
+
 }
 
 // Called every frame
@@ -51,8 +54,48 @@ void AProjectileDefault::Tick(float DeltaTime)
 
 }
 
+void AProjectileDefault::InitProjectile(FProjectileInfo InitParam)
+{
+	BulletProjectileMovement->InitialSpeed = InitParam.ProjectileInitSpeed;
+	BulletProjectileMovement->MaxSpeed = InitParam.ProjectileInitSpeed;
+	this->SetLifeSpan(InitParam.ProjectileLifeTime);
+	ProjectileSetting = InitParam;
+}
+
 void AProjectileDefault::BulletCollisionSphereHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
 {
+	if (OtherActor && Hit.PhysMaterial.IsValid())
+	{
+		EPhysicalSurface mySurfaceType = UGameplayStatics::GetSurfaceType(Hit);
+
+		if (ProjectileSetting.HitDecals.Contains(mySurfaceType))
+		{
+			UMaterialInterface* myMaterial = ProjectileSetting.HitDecals[mySurfaceType];
+
+			if (myMaterial && OtherComp)
+			{
+				UGameplayStatics::SpawnDecalAttached(myMaterial, FVector(20.0f), OtherComp, NAME_None, Hit.ImpactPoint, Hit.ImpactNormal.Rotation(), EAttachLocation::KeepWorldPosition, 10.0f);
+			}
+		}
+		if (ProjectileSetting.HitFXs.Contains(mySurfaceType))
+		{
+			UParticleSystem* myParticle = ProjectileSetting.HitFXs[mySurfaceType];
+			{
+				if (myParticle)
+				{
+					UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), myParticle, FTransform(Hit.ImpactNormal.Rotation(), Hit.ImpactPoint, FVector(1.0f)));
+				}
+			}
+		}
+
+		if (ProjectileSetting.HitSound)
+		{
+			UGameplayStatics::PlaySoundAtLocation(GetWorld(), ProjectileSetting.HitSound, Hit.ImpactPoint);
+		}
+	}
+
+	UGameplayStatics::ApplyDamage(OtherActor, ProjectileSetting.ProjectileDamage, GetInstigatorController(), this, NULL);
+	ImpactProjectile();
 }
 
 void AProjectileDefault::BulletCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFroomSweep, const FHitResult& SweepResult)
@@ -63,3 +106,7 @@ void AProjectileDefault::BulletCollisionSphereEndOverlap(UPrimitiveComponent* Ov
 {
 }
 
+void AProjectileDefault::ImpactProjectile()
+{
+	this->Destroy();
+}

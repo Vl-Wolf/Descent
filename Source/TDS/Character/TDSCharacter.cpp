@@ -13,6 +13,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/World.h"
+#include "TDS/Game/TDSGameInstance.h"
 
 ATDSCharacter::ATDSCharacter()
 {
@@ -43,16 +44,7 @@ ATDSCharacter::ATDSCharacter()
 	TopDownCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	TopDownCameraComponent->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	// Create a decal in the world to show the cursor's location
-	/*CursorToWorld = CreateDefaultSubobject<UDecalComponent>("CursorToWorld");
-	CursorToWorld->SetupAttachment(RootComponent);
-	static ConstructorHelpers::FObjectFinder<UMaterial> DecalMaterialAsset(TEXT("Material'/Game/Blueprint/Character/M_Cursor_Decal.M_Cursor_Decal'"));
-	if (DecalMaterialAsset.Succeeded())
-	{
-		CursorToWorld->SetDecalMaterial(DecalMaterialAsset.Object);
-	}
-	CursorToWorld->DecalSize = FVector(16.0f, 32.0f, 32.0f);
-	CursorToWorld->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f).Quaternion());*/
+	
 
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
@@ -63,32 +55,6 @@ void ATDSCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
 
-	/*if (CursorToWorld != nullptr)
-	{
-		if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
-		{
-			if (UWorld* World = GetWorld())
-			{
-				FHitResult HitResult;
-				FCollisionQueryParams Params(NAME_None, FCollisionQueryParams::GetUnknownStatId());
-				FVector StartLocation = TopDownCameraComponent->GetComponentLocation();
-				FVector EndLocation = TopDownCameraComponent->GetComponentRotation().Vector() * 2000.0f;
-				Params.AddIgnoredActor(this);
-				World->LineTraceSingleByChannel(HitResult, StartLocation, EndLocation, ECC_Visibility, Params);
-				FQuat SurfaceRotation = HitResult.ImpactNormal.ToOrientationRotator().Quaternion();
-				CursorToWorld->SetWorldLocationAndRotation(HitResult.Location, SurfaceRotation);
-			}
-		}
-		else if (APlayerController* PC = Cast<APlayerController>(GetController()))
-		{
-			FHitResult TraceHitResult;
-			PC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
-			FVector CursorFV = TraceHitResult.ImpactNormal;
-			FRotator CursorR = CursorFV.Rotation();
-			CursorToWorld->SetWorldLocation(TraceHitResult.Location);
-			CursorToWorld->SetWorldRotation(CursorR);
-		}
-	}*/
 
 	if (CurrentCursor)
 	{
@@ -112,7 +78,7 @@ void ATDSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitWeapon();
+	InitWeapon(InitWeaponName);
 
 	if (CursorMaterial)
 	{
@@ -129,6 +95,7 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* NewInputComponent
 
 	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputAttackPressed);
 	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::InputAttackReleased);
+	NewInputComponent->BindAction(TEXT("ReloadEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::TryReloadWeapon);
 }
 
 void ATDSCharacter::InputAxisX(float Value)
@@ -172,6 +139,36 @@ void ATDSCharacter::MovementTick(float DeltaTime)
 			myController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
 			float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
 			SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
+
+			if (CurrentWeapon)
+			{
+				FVector Displacement = FVector(0);
+				switch (MovementState)
+				{
+				case EMovementState::Aim_State :
+					Displacement = FVector(0.0f, 0.0f, 160.0f);
+					CurrentWeapon->ShouldReduceDispersion = true;
+					break;
+				case EMovementState::AimWalk_State:
+					Displacement = FVector(0.0f, 0.0f, 160.0f);
+					CurrentWeapon->ShouldReduceDispersion = true;
+					break;
+				case EMovementState::Walk_State:
+					Displacement = FVector(0.0f, 0.0f, 120.0f);
+					CurrentWeapon->ShouldReduceDispersion = false;
+					break;
+				case EMovementState::Run_State:
+					Displacement = FVector(0.0f, 0.0f, 120.0f);
+					CurrentWeapon->ShouldReduceDispersion = false;
+					break;
+				case EMovementState::Sprint_State:
+					break;
+				default:
+					break;
+				}
+
+				CurrentWeapon->ShootEndLocation = ResultHit.Location + Displacement;
+			}
 		}
 	}
 	
@@ -267,27 +264,76 @@ AWeaponDefault* ATDSCharacter::GetCurrentWeapon()
 	return CurrentWeapon;
 }
 
-void ATDSCharacter::InitWeapon()
+void ATDSCharacter::InitWeapon(FName IdWeaponName)
 {
-	if (InitWeaponClass)
+	UTDSGameInstance* myGI = Cast<UTDSGameInstance>(GetGameInstance());
+	FWeaponInfo myWeaponInfo;
+	if (myGI)
 	{
-		FVector SpawnLocation = FVector(0);
-		FRotator SpawnRoratation = FRotator(0);
-
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-		SpawnParams.Owner = GetOwner();
-		SpawnParams.Instigator = GetInstigator();
-
-		AWeaponDefault* myWeapon = Cast<AWeaponDefault>(GetWorld()->SpawnActor(InitWeaponClass, &SpawnLocation, &SpawnRoratation, SpawnParams));
-		if (myWeapon)
+		if (myGI->GetWeaponInfoByName(IdWeaponName, myWeaponInfo))
 		{
-			FAttachmentTransformRules Rule(EAttachmentRule::SnapToTarget, false);
-			myWeapon->AttachToComponent(GetMesh(), Rule, FName("WeaponSocketRightHand"));
-			CurrentWeapon = myWeapon;
-			myWeapon->UpdateStateWeapon(MovementState);
+			if (myWeaponInfo.WeaponClass)
+			{
+				FVector SpawnLocation = FVector(0);
+				FRotator SpawnRoratation = FRotator(0);
+
+				FActorSpawnParameters SpawnParams;
+				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+				SpawnParams.Owner = GetOwner();
+				SpawnParams.Instigator = GetInstigator();
+
+				AWeaponDefault* myWeapon = Cast<AWeaponDefault>(GetWorld()->SpawnActor(myWeaponInfo.WeaponClass, &SpawnLocation, &SpawnRoratation, SpawnParams));
+				if (myWeapon)
+				{
+					FAttachmentTransformRules Rule(EAttachmentRule::SnapToTarget, false);
+					myWeapon->AttachToComponent(GetMesh(), Rule, FName("WeaponSocketRightHand"));
+					CurrentWeapon = myWeapon;
+
+					myWeapon->WeaponSetting = myWeaponInfo;
+					myWeapon->WeaponInfo.Round = myWeaponInfo.MaxRound;
+					myWeapon->ReloadTimeDebug = myWeaponInfo.ReloadTime;
+					myWeapon->UpdateStateWeapon(MovementState);
+
+					myWeapon->OnWeaponReloadStart.AddDynamic(this, &ATDSCharacter::WeaponReloadStart);
+					myWeapon->OnWeaponReloadEnd.AddDynamic(this, &ATDSCharacter::WeaponReloadEnd);
+				}
+			}
+		}
+		else 
+		{
+			UE_LOG(LogTemp, Warning, TEXT("ATDSCharacter::InitWeapon - Weapon not found in table -NULL"));
+		}
+		
+	}
+}
+
+void ATDSCharacter::TryReloadWeapon()
+{
+	if (CurrentWeapon)
+	{
+		if (CurrentWeapon->GetWeaponRound() <= CurrentWeapon->WeaponSetting.MaxRound)
+		{
+			CurrentWeapon->InitReload();
 		}
 	}
+}
+
+void ATDSCharacter::WeaponReloadStart(UAnimMontage* Anim)
+{
+	WeaponReloadStart_BP(Anim);
+}
+
+void ATDSCharacter::WeaponReloadEnd()
+{
+	WeaponReloadEnd_BP();
+}
+
+void ATDSCharacter::WeaponReloadStart_BP_Implementation(UAnimMontage* Anim)
+{
+}
+
+void ATDSCharacter::WeaponReloadEnd_BP_Implementation()
+{
 }
 
 UDecalComponent* ATDSCharacter::GetCursorToWorld()
