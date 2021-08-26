@@ -172,7 +172,7 @@ void AWeaponDefault::Fire()
 
 	if (ShootLocation)
 	{
-		FVector SpawLocation = ShootLocation->GetComponentLocation();
+		FVector SpawnLocation = ShootLocation->GetComponentLocation();
 		FRotator SpawnRotation = ShootLocation->GetComponentRotation();
 		FProjectileInfo ProjectileInfo;
 		ProjectileInfo = GetProjectile();
@@ -181,9 +181,9 @@ void AWeaponDefault::Fire()
 		for (int8 i = 0; i < NumberProjectile; i++)
 		{
 			EndLocation = GetFireEndLocation();
-			FVector Dir = EndLocation - SpawLocation;
+			FVector Dir = EndLocation - SpawnLocation;
 			Dir.Normalize();
-			FMatrix myMatrix(Dir, FVector(0, 1, 0), FVector(0, 0, 1), FVector::ZeroVector);
+			FMatrix myMatrix(Dir, FVector(0, 0, 0), FVector(0, 0, 0), FVector::ZeroVector);
 			SpawnRotation = myMatrix.Rotator();
 
 			if (ProjectileInfo.Projectile)
@@ -194,7 +194,7 @@ void AWeaponDefault::Fire()
 				SpawnParams.Owner = GetOwner();
 				SpawnParams.Instigator = GetInstigator();
 
-				AProjectileDefault* myProjectile = Cast<AProjectileDefault>(GetWorld()->SpawnActor(ProjectileInfo.Projectile, &SpawLocation, &SpawnRotation, SpawnParams));
+				AProjectileDefault* myProjectile = Cast<AProjectileDefault>(GetWorld()->SpawnActor(ProjectileInfo.Projectile, &SpawnLocation, &SpawnRotation, SpawnParams));
 				if (myProjectile)
 				{
 					myProjectile->InitProjectile(WeaponSetting.ProjectileSetting);
@@ -202,7 +202,49 @@ void AWeaponDefault::Fire()
 			}
 			else
 			{
+				FHitResult Hit;
+				TArray<AActor*> Actor;
+				UKismetSystemLibrary::LineTraceSingle(GetWorld(), SpawnLocation, EndLocation * WeaponSetting.DistanceTrace, 
+													ETraceTypeQuery::TraceTypeQuery4, false, Actor, EDrawDebugTrace::ForDuration, 
+													Hit, true, FLinearColor::Red, FLinearColor::Green, 5.0f);
 
+				if (ShowDebug)
+				{
+					DrawDebugLine(GetWorld(), SpawnLocation, SpawnLocation + ShootLocation->GetForwardVector() * WeaponSetting.DistanceTrace,
+									FColor::Black, false, 5.0f, (uint8)'\000', 0.5f);
+				}
+
+				if (Hit.GetActor() && Hit.PhysMaterial.IsValid())
+				{
+					EPhysicalSurface mySurfaceType = UGameplayStatics::GetSurfaceType(Hit);
+
+					if (WeaponSetting.ProjectileSetting.HitDecals.Contains(mySurfaceType))
+					{
+						UMaterialInterface* myMaterial = WeaponSetting.ProjectileSetting.HitDecals[mySurfaceType];
+
+						if (myMaterial && Hit.GetComponent())
+						{
+							UGameplayStatics::SpawnDecalAttached(myMaterial, FVector(20.0f), Hit.GetComponent(), NAME_None, Hit.ImpactPoint, Hit.ImpactNormal.Rotation(), EAttachLocation::KeepWorldPosition, 10.0f);
+						}
+					}
+					if (WeaponSetting.ProjectileSetting.HitFXs.Contains(mySurfaceType))
+					{
+						UParticleSystem* myParticle = WeaponSetting.ProjectileSetting.HitFXs[mySurfaceType];
+						{
+							if (myParticle)
+							{
+								UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), myParticle, FTransform(Hit.ImpactNormal.Rotation(), Hit.ImpactPoint, FVector(1.0f)));
+							}
+						}
+					}
+
+					if (WeaponSetting.ProjectileSetting.HitSound)
+					{
+						UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponSetting.ProjectileSetting.HitSound, Hit.ImpactPoint);
+					}
+
+					UGameplayStatics::ApplyDamage(Hit.GetActor(), WeaponSetting.ProjectileSetting.ProjectileDamage, GetInstigatorController(), this, NULL);
+				}
 			}
 
 		}
@@ -318,6 +360,8 @@ int32 AWeaponDefault::GetWeaponRound()
 void AWeaponDefault::InitReload()
 {
 	WeaponReloading = true;
+
+	//UGameplayStatics::SpawnSoundAtLocation(GetWorld(), WeaponSetting.SoundReloadWeapon, ShootLocation->GetComponentLocation());
 
 	ReloadTimer = WeaponSetting.ReloadTime;
 

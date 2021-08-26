@@ -29,8 +29,8 @@ AProjectileDefault::AProjectileDefault()
 
 	BulletProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Bullet ProjectileMovement"));
 	BulletProjectileMovement->UpdatedComponent = RootComponent;
-	BulletProjectileMovement->InitialSpeed = 1.f;
-	BulletProjectileMovement->MaxSpeed = 0.f;
+	BulletProjectileMovement->InitialSpeed = ProjectileSetting.ProjectileInitSpeed;
+	BulletProjectileMovement->MaxSpeed = ProjectileSetting.ProjectileInitSpeed;
 
 	BulletProjectileMovement->bRotationFollowsVelocity = true;
 	BulletProjectileMovement->bShouldBounce = true;
@@ -60,6 +60,27 @@ void AProjectileDefault::InitProjectile(FProjectileInfo InitParam)
 	BulletProjectileMovement->MaxSpeed = InitParam.ProjectileInitSpeed;
 	this->SetLifeSpan(InitParam.ProjectileLifeTime);
 	ProjectileSetting = InitParam;
+
+	if (InitParam.ProjectileStaticMesh)
+	{
+		BulletMesh->SetStaticMesh(InitParam.ProjectileStaticMesh);
+		BulletMesh->SetRelativeTransform(InitParam.ProjectileStaticMeshOffset);
+	}
+	else
+	{
+		BulletMesh->DestroyComponent();
+	}
+
+	if (InitParam.ProjectileTrailFX)
+	{
+		BulletFX->SetTemplate(InitParam.ProjectileTrailFX);
+		BulletFX->SetRelativeTransform(InitParam.ProjectileTrailFXOffset);
+	}
+	else
+	{
+		BulletFX->DestroyComponent();
+	}
+
 }
 
 void AProjectileDefault::BulletCollisionSphereHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
