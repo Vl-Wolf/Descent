@@ -33,4 +33,7 @@ public:
 	bool TimerEnabled = false;
 	float TimerToExplose = 0.0f;
 	float TimeToExplose = 5.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+		bool ShowDebug = false;
 };

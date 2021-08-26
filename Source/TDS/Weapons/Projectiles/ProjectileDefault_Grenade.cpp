@@ -3,6 +3,7 @@
 
 #include "ProjectileDefault_Grenade.h"
 #include "Kismet/GameplayStatics.h"
+#include "DrawDebugHelpers.h"
 
 void AProjectileDefault_Grenade::BeginPlay()
 {
@@ -42,6 +43,13 @@ void AProjectileDefault_Grenade::ImpactProjectile()
 
 void AProjectileDefault_Grenade::Explose()
 {
+	if (ShowDebug)
+	{
+		DrawDebugSphere(GetWorld(), GetActorLocation(), ProjectileSetting.ProjectileMinRadiusDamage, 12, FColor::Green, false, 12.0f);
+		DrawDebugSphere(GetWorld(), GetActorLocation(), ProjectileSetting.ProjectileMinRadiusDamage, 12, FColor::Red, false, 12.0f);
+
+	}
+
 	TimerEnabled = false;
 	if (ProjectileSetting.ExploseFX)
 	{

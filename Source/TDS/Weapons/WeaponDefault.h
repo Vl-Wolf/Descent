@@ -44,12 +44,14 @@ protected:
 	virtual void BeginPlay() override;
 
 public:	
-	// Called every frame
+	// Ticks
 	virtual void Tick(float DeltaTime) override;
 
 	void FireTick(float DeltaTime);
 	void ReloadTick(float DeltaTime);
 	void DispersionTick(float DeltaTime);
+	void DropTick(float DeltaTime);
+	void ShellDropTick(float DeltaTime);
 
 	void WeaponInit();
 
@@ -57,6 +59,7 @@ public:
 		bool WeaponFiring = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic")
 		bool WeaponReloading = false;
+		bool WeaponAimig = false;
 
 	UFUNCTION(BlueprintCallable)
 		void SetWeaponStateFire(bool bIsFire);
@@ -90,12 +93,21 @@ public:
 	float CurrentDispersionRecoil = 0.1f;
 	float CurrentDispersionReduction = 0.1f;
 
+	bool DropMagasinFlag = false;
+	float DropMagasinTimer = -1.0f;
+
+	bool DropShellBulletsFlag = false;
+	float DropShellBulletsTimer = -1.0f;
+
 	FVector ShootEndLocation = FVector(0);
 
 	UFUNCTION(BlueprintCallable)
 		int32 GetWeaponRound();
 	void InitReload();
 	void FinishReload();
+
+	UFUNCTION()
+		void InitDropMesh(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 		bool ShowDebug = false;
