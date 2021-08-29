@@ -105,11 +105,14 @@ public:
 		void WeaponReloadStart(UAnimMontage* Anim);
 	UFUNCTION()
 		void WeaponReloadEnd();
+	UFUNCTION()
+		void WeaponFire(UAnimMontage* Anim);
 	UFUNCTION(BlueprintNativeEvent)
 		void WeaponReloadStart_BP(UAnimMontage* Anim);
 	UFUNCTION(BlueprintNativeEvent)
 		void WeaponReloadEnd_BP();
-
+	UFUNCTION(BlueprintNativeEvent)
+		void WeaponFire_BP(UAnimMontage* Anim);
 
 	UFUNCTION(BlueprintCallable)
 		UDecalComponent* GetCursorToWorld();

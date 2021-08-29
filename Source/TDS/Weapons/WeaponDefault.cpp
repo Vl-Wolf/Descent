@@ -46,6 +46,8 @@ void AWeaponDefault::Tick(float DeltaTime)
 	FireTick(DeltaTime);
 	ReloadTick(DeltaTime);
 	DispersionTick(DeltaTime);
+	DropTick(DeltaTime);
+	ShellDropTick(DeltaTime);
 }
 
 void AWeaponDefault::FireTick(float DeltaTime)
@@ -196,7 +198,7 @@ FProjectileInfo AWeaponDefault::GetProjectile()
 void AWeaponDefault::Fire()
 {
 	UAnimMontage* AnimPlay = nullptr;
-	if (WeaponAimig)
+	if (WeaponAiming)
 	{
 		AnimPlay = WeaponSetting.AnimationWeaponInfo.AnimCharacterFireAim;
 	}
@@ -210,7 +212,7 @@ void AWeaponDefault::Fire()
 		SkeletalMeshWeapon->GetAnimInstance()->Montage_Play(WeaponSetting.AnimationWeaponInfo.AnimWeaponFire);
 	}
 
-	if (WeaponSetting.MagasinDrop.DropMesh)
+	if (WeaponSetting.ShellBullets.DropMesh)
 	{
 		if (WeaponSetting.ShellBullets.DropTime < 0.0f)
 		{
@@ -223,7 +225,7 @@ void AWeaponDefault::Fire()
 		}
 	}
 
-	OnWeaponReloadStart.Broadcast(AnimPlay);
+	OnWeaponFire.Broadcast(AnimPlay);
 
 	FireTimer = WeaponSetting.RateOfFire;
 	WeaponInfo.Round = WeaponInfo.Round - 1;
@@ -322,24 +324,28 @@ void AWeaponDefault::UpdateStateWeapon(EMovementState NewMovementState)
 	switch (NewMovementState)
 	{
 	case EMovementState::Aim_State:
+		WeaponAiming = true;
 		CurrentDispersionMax = WeaponSetting.DispesionWeapon.Aim_StateDispersionAimMax;
 		CurrentDispersionMin = WeaponSetting.DispesionWeapon.Aim_StateDispersionAimMin;
 		CurrentDispersionRecoil = WeaponSetting.DispesionWeapon.Aim_StateDispersionAimRecoil;
 		CurrentDispersionReduction = WeaponSetting.DispesionWeapon.Aim_StateDispersionReduction;
 		break;
 	case EMovementState::AimWalk_State:
+		WeaponAiming = true;
 		CurrentDispersionMax = WeaponSetting.DispesionWeapon.AimWalk_StateDispersionAimMax;
 		CurrentDispersionMin = WeaponSetting.DispesionWeapon.AimWalk_StateDispersionAimMin;
 		CurrentDispersionRecoil = WeaponSetting.DispesionWeapon.AimWalk_StateDispersionAimRecoil;
 		CurrentDispersionReduction = WeaponSetting.DispesionWeapon.AimWalk_StateDispersionReduction;
 		break;
 	case EMovementState::Walk_State:
+		WeaponAiming = false;
 		CurrentDispersionMax = WeaponSetting.DispesionWeapon.Walk_StateDispersionAimMax;
 		CurrentDispersionMin = WeaponSetting.DispesionWeapon.Walk_StateDispersionAimMin;
 		CurrentDispersionRecoil = WeaponSetting.DispesionWeapon.Walk_StateDispersionAimRecoil;
 		CurrentDispersionReduction = WeaponSetting.DispesionWeapon.Walk_StateDispersionReduction;
 		break;
 	case EMovementState::Run_State:
+		WeaponAiming = false;
 		CurrentDispersionMax = WeaponSetting.DispesionWeapon.Run_StateDispersionAimMax;
 		CurrentDispersionMin = WeaponSetting.DispesionWeapon.Run_StateDispersionAimMin;
 		CurrentDispersionRecoil = WeaponSetting.DispesionWeapon.Run_StateDispersionAimRecoil;
@@ -430,7 +436,7 @@ void AWeaponDefault::InitReload()
 
 	UAnimMontage* AnimPlay = nullptr;
 
-	if (WeaponAimig)
+	if (WeaponAiming)
 	{
 		AnimPlay = WeaponSetting.AnimationWeaponInfo.AnimCharacterReloadAim;
 	}
@@ -443,7 +449,7 @@ void AWeaponDefault::InitReload()
 
 	UAnimMontage* AnimWeaponPlay = nullptr;
 
-	if (WeaponAimig)
+	if (WeaponAiming)
 	{
 		AnimWeaponPlay = WeaponSetting.AnimationWeaponInfo.AnimWeaponReloadAim;
 	}

@@ -12,6 +12,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponReloadStart, UAnimMontage*, Anim);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponReloadEnd);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponFire, UAnimMontage*, Anim);
 
 UCLASS()
 class TDS_API AWeaponDefault : public AActor
@@ -24,6 +25,7 @@ public:
 
 	FOnWeaponReloadStart OnWeaponReloadStart;
 	FOnWeaponReloadEnd OnWeaponReloadEnd;
+	FOnWeaponFire OnWeaponFire;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
 		class USceneComponent* SceneComponent = nullptr;
@@ -59,7 +61,7 @@ public:
 		bool WeaponFiring = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic")
 		bool WeaponReloading = false;
-		bool WeaponAimig = false;
+		bool WeaponAiming = false;
 
 	UFUNCTION(BlueprintCallable)
 		void SetWeaponStateFire(bool bIsFire);

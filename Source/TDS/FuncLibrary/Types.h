@@ -71,9 +71,9 @@ struct FProjectileInfo
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Explosion")
 		USoundBase* ExploseSound = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Explosion")
-		float ProjectileMaxRadiusDamage = 200.0f;
+		float ProjectileMaxRadiusDamage = 400.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Explosion")
-		float ProjectileMinRadiusDamage = 400.0f;
+		float ProjectileMinRadiusDamage = 200.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Explosion")
 		float ExploseMaxDamage = 40.0;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Explosion")
