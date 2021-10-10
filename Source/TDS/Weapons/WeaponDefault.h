@@ -10,9 +10,9 @@
 
 #include "WeaponDefault.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponReloadStart, UAnimMontage*, Anim);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnWeaponReloadEnd);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponFire, UAnimMontage*, Anim);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponReloadStart, UAnimMontage*, AnimReloadStart);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponReloadEnd, bool, bIsSuccess, int32, AmmoSafe);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponFire, UAnimMontage*, AnimFireChar);
 
 UCLASS()
 class TDS_API AWeaponDefault : public AActor
@@ -39,7 +39,7 @@ public:
 	UPROPERTY()
 		FWeaponInfo WeaponSetting;
 	UPROPERTY()
-		FAddicionalWeaponInfo WeaponInfo;
+		FAdditionalWeaponInfo AdditionalWeaponInfo;
 
 protected:
 	// Called when the game starts or when spawned
@@ -70,6 +70,7 @@ public:
 
 	FProjectileInfo GetProjectile();
 
+	UFUNCTION()
 	void Fire();
 
 	void UpdateStateWeapon(EMovementState NewMovementState);
@@ -80,6 +81,7 @@ public:
 	FVector GetFireEndLocation() const;
 	int8 GetNumberProjectileByShoot() const;
 
+	//timers
 	float FireTimer = 0.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic")
 		float ReloadTimer = 0.0f;
@@ -105,8 +107,13 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		int32 GetWeaponRound();
+	UFUNCTION()
 	void InitReload();
 	void FinishReload();
+	void CancelReload();
+
+	bool CheckCanWeaponReload();
+	int8 GetAviableAmmoForReload();
 
 	UFUNCTION()
 		void InitDropMesh(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion);

@@ -16,6 +16,15 @@ enum class EMovementState : uint8
 	Sprint_State UMETA(DisplayName = "Sprint State"),
 };
 
+UENUM(BlueprintType)
+enum class EWeaponType : uint8
+{
+	RifleType UMETA(DisplayName = "Rifle"),
+	ShotGunType UMETA(DisplayName = "ShotGun"),
+	SniperRifle UMETA(DisplayName = "SniperRifle"),
+	GrenadeLauncher UMETA(DisplayName = "GrenadeLauncher")
+};
+
 USTRUCT(BlueprintType)
 struct FCharacterSpeed
 {
@@ -217,16 +226,65 @@ struct FWeaponInfo : public FTableRowBase
 		FDropMeshInfo MagasinDrop;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drop Mesh")
 		FDropMeshInfo ShellBullets;
+
+	//inventory
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+		float SwitchTimeWeapon = 1.0f;
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "Inventory")
+		UTexture2D* WeaponIcon = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Inventory")
+		EWeaponType WeaponType = EWeaponType::RifleType;
 	
 };
 
 USTRUCT(BlueprintType)
-struct FAddicionalWeaponInfo
+struct FAdditionalWeaponInfo
 {
 	GENERATED_BODY()
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Stats")
-		int32 Round = 10;
+		int32 Round = 0;
+};
+
+USTRUCT(BlueprintType)
+struct FWeaponSlot
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponSlot")
+		FName NameItem;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "WeaponSlot")
+		FAdditionalWeaponInfo AdditionalInfo;
+};
+
+USTRUCT(BlueprintType)
+struct FAmmoSlot
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AmmoSlot")
+		EWeaponType WeaponType = EWeaponType::RifleType;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AmmoSlot")
+		int32 Cout = 100;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "AmmoSlot")
+		int32 MaxCout = 100;
+};
+
+USTRUCT(BlueprintType)
+struct FDropItem : public FTableRowBase
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DropWeapon")
+		UStaticMesh* WeaponStaticMesh = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DropWeapon")
+		USkeletalMesh* WeaponSkeletalMesh = nullptr;
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "DropWeapon")
+		UMaterialInstance* WeaponMaterial = nullptr;
+	UPROPERTY(EditAnyWhere, BlueprintReadWrite, Category = "DropWeapon")
+		FTransform Offset;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "DropWeapon")
+		FWeaponSlot WeaponInfo;
 };
 
 UCLASS()

@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "TDS/FuncLibrary/Types.h"
 #include "TDS/Weapons/WeaponDefault.h"
+#include "TDS/Character/TDSInventoryComponent.h"
 
 #include "TDSCharacter.generated.h"
 
@@ -29,8 +30,9 @@ public:
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
-	/** Returns CursorToWorld subobject **/
-	//FORCEINLINE class UDecalComponent* GetCursorToWorld() { return CursorToWorld; }
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+		class UTDSInventoryComponent* InventoryComponent;
 
 private:
 	/** Top down camera */
@@ -41,9 +43,7 @@ private:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
 
-	/** A decal that projects to the cursor location. */
-	//UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	//class UDecalComponent* CursorToWorld;
+	
 
 public:
 
@@ -59,6 +59,8 @@ public:
 		EMovementState MovementState = EMovementState::Run_State;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 		FCharacterSpeed MovementInfo;
+
+	//Movement flags
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 		bool SprintRunEnabled = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
@@ -70,8 +72,8 @@ public:
 	AWeaponDefault* CurrentWeapon = nullptr;
 
 	//Demo
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Demo")
-		FName InitWeaponName;
+	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Demo")
+		FName InitWeaponName;*/
 	
 	//Input
 	UFUNCTION()
@@ -98,23 +100,32 @@ public:
 	UFUNCTION(BlueprintCallable)
 		AWeaponDefault* GetCurrentWeapon();
 	UFUNCTION(BlueprintCallable)
-		void InitWeapon(FName IdWeaponName);
+		void InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon);
+	UFUNCTION(BlueprintCallable)
+		void RemoveCurrentWeapon();
 	UFUNCTION(BlueprintCallable)
 		void TryReloadWeapon();
 	UFUNCTION()
 		void WeaponReloadStart(UAnimMontage* Anim);
 	UFUNCTION()
-		void WeaponReloadEnd();
+		void WeaponReloadEnd(bool bIsSuccess, int32 AmmoSafe);
 	UFUNCTION()
 		void WeaponFire(UAnimMontage* Anim);
 	UFUNCTION(BlueprintNativeEvent)
 		void WeaponReloadStart_BP(UAnimMontage* Anim);
 	UFUNCTION(BlueprintNativeEvent)
-		void WeaponReloadEnd_BP();
+		void WeaponReloadEnd_BP(bool bIsSuccess);
 	UFUNCTION(BlueprintNativeEvent)
 		void WeaponFire_BP(UAnimMontage* Anim);
 
 	UFUNCTION(BlueprintCallable)
 		UDecalComponent* GetCursorToWorld();
+
+	//inventory
+	void TrySwitchNextWeapon();
+	void TrySwitchPreviosWeapon();
+
+	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
+		int32 CurrentIndexWeapon = 0;
 };
 

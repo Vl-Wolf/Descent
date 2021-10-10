@@ -6,6 +6,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Kismet/GameplayStatics.h"
 #include "Engine/StaticMeshActor.h"
+#include "TDS/Character/TDSInventoryComponent.h"
 
 // Sets default values
 AWeaponDefault::AWeaponDefault()
@@ -52,29 +53,15 @@ void AWeaponDefault::Tick(float DeltaTime)
 
 void AWeaponDefault::FireTick(float DeltaTime)
 {
-	if (GetWeaponRound() > 0)
+	if (WeaponFiring && GetWeaponRound() > 0 && !WeaponReloading)
 	{
-		if (WeaponFiring)
+		if (FireTimer < 0.0f)
 		{
-			if (FireTimer < 0.f)
-			{
-				if (!WeaponReloading)
-				{
-					Fire();
-				}
-			}
-			else
-			{
-				FireTimer -= DeltaTime;
-			}
+			Fire();
 		}
-
-	}
-	else
-	{
-		if (!WeaponReloading)
+		else
 		{
-			InitReload();
+			FireTimer -= DeltaTime;
 		}
 	}
 	
@@ -228,8 +215,9 @@ void AWeaponDefault::Fire()
 	OnWeaponFire.Broadcast(AnimPlay);
 
 	FireTimer = WeaponSetting.RateOfFire;
-	WeaponInfo.Round = WeaponInfo.Round - 1;
+	AdditionalWeaponInfo.Round = AdditionalWeaponInfo.Round - 1;
 	ChangeDispersionByShoot();
+
 	UGameplayStatics::SpawnSoundAtLocation(GetWorld(), WeaponSetting.SoundFireWeapon, ShootLocation->GetComponentLocation());
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), WeaponSetting.EffectFireWeapon, ShootLocation->GetComponentTransform());
 	
@@ -246,13 +234,15 @@ void AWeaponDefault::Fire()
 		for (int8 i = 0; i < NumberProjectile; i++)
 		{
 			EndLocation = GetFireEndLocation();
-			FVector Dir = EndLocation - SpawnLocation;
-			Dir.Normalize();
-			FMatrix myMatrix(Dir, FVector(0, 0, 0), FVector(0, 0, 0), FVector::ZeroVector);
-			SpawnRotation = myMatrix.Rotator();
+			
 
 			if (ProjectileInfo.Projectile)
 			{
+				FVector Dir = EndLocation - SpawnLocation;
+				Dir.Normalize();
+				FMatrix myMatrix(Dir, FVector(0, 1, 0), FVector(0, 0, 1), FVector::ZeroVector);
+				SpawnRotation = myMatrix.Rotator();
+
 				//basic fire
 				FActorSpawnParameters SpawnParams;
 				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
@@ -268,16 +258,25 @@ void AWeaponDefault::Fire()
 			else
 			{
 				FHitResult Hit;
-				TArray<AActor*> Actor;
-				UKismetSystemLibrary::LineTraceSingle(GetWorld(), SpawnLocation, EndLocation * WeaponSetting.DistanceTrace, 
-													ETraceTypeQuery::TraceTypeQuery4, false, Actor, EDrawDebugTrace::ForDuration, 
-													Hit, true, FLinearColor::Red, FLinearColor::Green, 5.0f);
-
+				TArray<AActor*> Actors;
+				
+				EDrawDebugTrace::Type DebugTrace;
 				if (ShowDebug)
 				{
 					DrawDebugLine(GetWorld(), SpawnLocation, SpawnLocation + ShootLocation->GetForwardVector() * WeaponSetting.DistanceTrace,
-									FColor::Black, false, 5.0f, (uint8)'\000', 0.5f);
+						FColor::Black, false, 5.0f, (uint8)'\000', 0.5f);
+					DebugTrace = EDrawDebugTrace::ForDuration;
 				}
+				else
+				{
+					DebugTrace = EDrawDebugTrace::None;
+				}
+
+				UKismetSystemLibrary::LineTraceSingle(GetWorld(), SpawnLocation, EndLocation * WeaponSetting.DistanceTrace, 
+													ETraceTypeQuery::TraceTypeQuery4, false, Actors, EDrawDebugTrace::ForDuration, 
+													Hit, true, FLinearColor::Red, FLinearColor::Green, 5.0f);
+
+				
 
 				if (Hit.GetActor() && Hit.PhysMaterial.IsValid())
 				{
@@ -295,12 +294,11 @@ void AWeaponDefault::Fire()
 					if (WeaponSetting.ProjectileSetting.HitFXs.Contains(mySurfaceType))
 					{
 						UParticleSystem* myParticle = WeaponSetting.ProjectileSetting.HitFXs[mySurfaceType];
+						if (myParticle)
 						{
-							if (myParticle)
-							{
-								UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), myParticle, FTransform(Hit.ImpactNormal.Rotation(), Hit.ImpactPoint, FVector(1.0f)));
-							}
+							UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), myParticle, FTransform(Hit.ImpactNormal.Rotation(), Hit.ImpactPoint, FVector(1.0f)));
 						}
+						
 					}
 
 					if (WeaponSetting.ProjectileSetting.HitSound)
@@ -314,6 +312,14 @@ void AWeaponDefault::Fire()
 
 		}
 		
+	}
+
+	if (GetWeaponRound() <= 0 && !WeaponReloading)
+	{
+		if (CheckCanWeaponReload())
+		{
+			InitReload();
+		}
 	}
 }
 
@@ -352,6 +358,7 @@ void AWeaponDefault::UpdateStateWeapon(EMovementState NewMovementState)
 		CurrentDispersionReduction = WeaponSetting.DispesionWeapon.Run_StateDispersionReduction;
 		break;
 	case EMovementState::Sprint_State:
+		WeaponAiming = false;
 		BlockFire = true;
 		SetWeaponStateFire(false);
 		break;
@@ -423,7 +430,7 @@ int8 AWeaponDefault::GetNumberProjectileByShoot() const
 
 int32 AWeaponDefault::GetWeaponRound()
 {
-	return WeaponInfo.Round;
+	return AdditionalWeaponInfo.Round;
 }
 
 void AWeaponDefault::InitReload()
@@ -473,8 +480,70 @@ void AWeaponDefault::InitReload()
 void AWeaponDefault::FinishReload()
 {
 	WeaponReloading = false;
-	WeaponInfo.Round = WeaponSetting.MaxRound;
-	OnWeaponReloadEnd.Broadcast();
+	
+	int8 AviableAmmoFromInventory = GetAviableAmmoForReload();
+	int8 AmmoNeedTakeFromInventory;
+	int8 NeedToReload = WeaponSetting.MaxRound - AdditionalWeaponInfo.Round;
+
+	if (NeedToReload > AviableAmmoFromInventory)
+	{
+		AdditionalWeaponInfo.Round = AviableAmmoFromInventory;
+		AmmoNeedTakeFromInventory = AviableAmmoFromInventory;
+	}
+	else
+	{
+		AdditionalWeaponInfo.Round += NeedToReload;
+		AmmoNeedTakeFromInventory = NeedToReload;
+	}
+
+	OnWeaponReloadEnd.Broadcast(true, -AmmoNeedTakeFromInventory);
+}
+
+void AWeaponDefault::CancelReload()
+{
+	WeaponReloading = false;
+	if (SkeletalMeshWeapon && SkeletalMeshWeapon->GetAnimInstance())
+	{
+		SkeletalMeshWeapon->GetAnimInstance()->StopAllMontages(0.15f);
+	}
+
+	OnWeaponReloadEnd.Broadcast(false, 0);
+	DropMagasinFlag = false;
+}
+
+bool AWeaponDefault::CheckCanWeaponReload()
+{
+	bool result = true; 
+	if (GetOwner())
+	{
+		UTDSInventoryComponent* MyInv = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
+		if (MyInv)
+		{
+			int8 AviableAmmoForWeapon;
+			if (!MyInv->CheckAmmoForWeapon(WeaponSetting.WeaponType, AviableAmmoForWeapon))
+			{
+				result = false;
+			}
+		}
+	}
+	return result;
+}
+
+int8 AWeaponDefault::GetAviableAmmoForReload()
+{
+	int8 AviableAmmoForWeapon = WeaponSetting.MaxRound;
+	if (GetOwner())
+	{
+		UTDSInventoryComponent* MyInv = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
+		if (MyInv)
+		{
+			if (MyInv->CheckAmmoForWeapon(WeaponSetting.WeaponType, AviableAmmoForWeapon))
+			{
+				AviableAmmoForWeapon = AviableAmmoForWeapon;
+			}
+		}
+	}
+	return AviableAmmoForWeapon;
 }
 
 void AWeaponDefault::InitDropMesh(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion)

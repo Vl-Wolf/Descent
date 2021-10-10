@@ -44,7 +44,11 @@ ATDSCharacter::ATDSCharacter()
 	TopDownCameraComponent->SetupAttachment(CameraBoom, USpringArmComponent::SocketName);
 	TopDownCameraComponent->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
-	
+	InventoryComponent = CreateDefaultSubobject<UTDSInventoryComponent>(TEXT("InventoryComponent"));
+	if (InventoryComponent)
+	{
+		InventoryComponent->OnSwitchWeapon.AddDynamic(this, &ATDSCharacter::InitWeapon);
+	}
 
 	// Activate ticking in order to update the cursor every frame.
 	PrimaryActorTick.bCanEverTick = true;
@@ -78,8 +82,6 @@ void ATDSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitWeapon(InitWeaponName);
-
 	if (CursorMaterial)
 	{
 		CurrentCursor = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), CursorMaterial, CursorSize, FVector(0));
@@ -96,6 +98,9 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* NewInputComponent
 	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputAttackPressed);
 	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::InputAttackReleased);
 	NewInputComponent->BindAction(TEXT("ReloadEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::TryReloadWeapon);
+
+	NewInputComponent->BindAction(TEXT("SwitchNextWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchNextWeapon);
+	NewInputComponent->BindAction(TEXT("SwitchPreviosWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchPreviosWeapon);
 }
 
 void ATDSCharacter::InputAxisX(float Value)
@@ -264,8 +269,13 @@ AWeaponDefault* ATDSCharacter::GetCurrentWeapon()
 	return CurrentWeapon;
 }
 
-void ATDSCharacter::InitWeapon(FName IdWeaponName)
+void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon)
 {
+	if (CurrentWeapon)
+	{
+		CurrentWeapon->Destroy();
+		CurrentWeapon = nullptr;
+	}
 	UTDSGameInstance* myGI = Cast<UTDSGameInstance>(GetGameInstance());
 	FWeaponInfo myWeaponInfo;
 	if (myGI)
@@ -279,7 +289,7 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName)
 
 				FActorSpawnParameters SpawnParams;
 				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-				SpawnParams.Owner = GetOwner();
+				SpawnParams.Owner = this;
 				SpawnParams.Instigator = GetInstigator();
 
 				AWeaponDefault* myWeapon = Cast<AWeaponDefault>(GetWorld()->SpawnActor(myWeaponInfo.WeaponClass, &SpawnLocation, &SpawnRoratation, SpawnParams));
@@ -290,13 +300,25 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName)
 					CurrentWeapon = myWeapon;
 
 					myWeapon->WeaponSetting = myWeaponInfo;
-					myWeapon->WeaponInfo.Round = myWeaponInfo.MaxRound;
+					//myWeapon->AdditionalWeaponInfo.Round = myWeaponInfo.MaxRound;
 					myWeapon->ReloadTimeDebug = myWeaponInfo.ReloadTime;
 					myWeapon->UpdateStateWeapon(MovementState);
+
+					myWeapon->AdditionalWeaponInfo = WeaponAdditionalInfo;
+					CurrentIndexWeapon = NewCurrentIndexWeapon;
 
 					myWeapon->OnWeaponReloadStart.AddDynamic(this, &ATDSCharacter::WeaponReloadStart);
 					myWeapon->OnWeaponReloadEnd.AddDynamic(this, &ATDSCharacter::WeaponReloadEnd);
 					myWeapon->OnWeaponFire.AddDynamic(this, &ATDSCharacter::WeaponFire);
+
+					if (CurrentWeapon->GetWeaponRound() <= 0 && CurrentWeapon->CheckCanWeaponReload())
+					{
+						CurrentWeapon->InitReload();
+					}
+					if (InventoryComponent)
+					{
+						InventoryComponent->OnWeaponAmmoAviable.Broadcast(myWeapon->WeaponSetting.WeaponType);
+					}
 				}
 			}
 		}
@@ -308,11 +330,16 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName)
 	}
 }
 
+void ATDSCharacter::RemoveCurrentWeapon()
+{
+
+}
+
 void ATDSCharacter::TryReloadWeapon()
 {
-	if (CurrentWeapon)
+	if (CurrentWeapon && !CurrentWeapon->WeaponReloading)
 	{
-		if (CurrentWeapon->GetWeaponRound() <= CurrentWeapon->WeaponSetting.MaxRound)
+		if (CurrentWeapon->GetWeaponRound() <= CurrentWeapon->WeaponSetting.MaxRound && CurrentWeapon->CheckCanWeaponReload())
 		{
 			CurrentWeapon->InitReload();
 		}
@@ -324,13 +351,24 @@ void ATDSCharacter::WeaponReloadStart(UAnimMontage* Anim)
 	WeaponReloadStart_BP(Anim);
 }
 
-void ATDSCharacter::WeaponReloadEnd()
+void ATDSCharacter::WeaponReloadEnd(bool bIsSuccess, int32 AmmoTake)
 {
-	WeaponReloadEnd_BP();
+	if (InventoryComponent && CurrentWeapon)
+	{
+		InventoryComponent->AmmoSlotChangeValue(CurrentWeapon->WeaponSetting.WeaponType, AmmoTake);
+		InventoryComponent->SetAdditionalInfoWeapon(CurrentIndexWeapon, CurrentWeapon->AdditionalWeaponInfo);
+	}
+
+	WeaponReloadEnd_BP(bIsSuccess);
 }
 
 void ATDSCharacter::WeaponFire(UAnimMontage* Anim)
 {
+	if (InventoryComponent && CurrentWeapon)
+	{
+		InventoryComponent->SetAdditionalInfoWeapon(CurrentIndexWeapon, CurrentWeapon->AdditionalWeaponInfo);
+	}
+
 	WeaponFire_BP(Anim);
 }
 
@@ -338,7 +376,7 @@ void ATDSCharacter::WeaponReloadStart_BP_Implementation(UAnimMontage* Anim)
 {
 }
 
-void ATDSCharacter::WeaponReloadEnd_BP_Implementation()
+void ATDSCharacter::WeaponReloadEnd_BP_Implementation(bool bIsSuccess)
 {
 }
 
@@ -349,4 +387,52 @@ void ATDSCharacter::WeaponFire_BP_Implementation(UAnimMontage* Anim)
 UDecalComponent* ATDSCharacter::GetCursorToWorld()
 {
 	return CurrentCursor;
+}
+
+void ATDSCharacter::TrySwitchNextWeapon()
+{
+	if (InventoryComponent->WeaponSlots.Num() > 1)
+	{
+		int8 OldIndex = CurrentIndexWeapon;
+		FAdditionalWeaponInfo OldInfo;
+		if(CurrentWeapon)
+		{
+			OldInfo = CurrentWeapon->AdditionalWeaponInfo;
+			if (CurrentWeapon->WeaponReloading)
+			{
+				CurrentWeapon->CancelReload();
+			}
+		}
+		if (InventoryComponent)
+		{
+			if (InventoryComponent->SwitchWeaponToIndex(CurrentIndexWeapon + 1, OldIndex, OldInfo, true))
+			{
+
+			}
+		}
+	}
+}
+
+void ATDSCharacter::TrySwitchPreviosWeapon()
+{
+	if (InventoryComponent->WeaponSlots.Num() > 1)
+	{
+		int8 OldIndex = CurrentIndexWeapon;
+		FAdditionalWeaponInfo OldInfo;
+		if (CurrentWeapon)
+		{
+			OldInfo = CurrentWeapon->AdditionalWeaponInfo;
+			if (CurrentWeapon->WeaponReloading)
+			{
+				CurrentWeapon->CancelReload();
+			}
+		}
+		if (InventoryComponent)
+		{
+			if (InventoryComponent->SwitchWeaponToIndex(CurrentIndexWeapon - 1, OldIndex, OldInfo, false))
+			{
+
+			}
+		}
+	}
 }
