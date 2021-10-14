@@ -7,6 +7,7 @@
 #include "TDS/FuncLibrary/Types.h"
 #include "TDS/Weapons/WeaponDefault.h"
 #include "TDS/Character/TDSInventoryComponent.h"
+#include "TDS/Character/TDSCharacterHealthComponent.h"
 
 #include "TDSCharacter.generated.h"
 
@@ -21,6 +22,8 @@ protected:
 public:
 	ATDSCharacter();
 
+	FTimerHandle TimerHandle_RagDollTimer;
+
 	// Called every frame.
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -31,8 +34,10 @@ public:
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
 		class UTDSInventoryComponent* InventoryComponent;
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
+		class UTDSCharacterHealthComponent* HealthComponent;
 
 private:
 	/** Top down camera */
@@ -42,8 +47,6 @@ private:
 	/** Camera boom positioning the camera above the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class USpringArmComponent* CameraBoom;
-
-	
 
 public:
 
@@ -67,13 +70,15 @@ public:
 		bool WalkEnabled = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 		bool AimEnabled = false;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		bool bIsAlive = true;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Death")
+		TArray<UAnimMontage*> DeadsAnim;
 
 	//Weapon
 	AWeaponDefault* CurrentWeapon = nullptr;
 
-	//Demo
-	/*UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Demo")
-		FName InitWeaponName;*/
 	
 	//Input
 	UFUNCTION()
@@ -97,6 +102,7 @@ public:
 		void CharacterUpdate();
 	UFUNCTION(BlueprintCallable)
 		void ChangeMovementState();
+
 	UFUNCTION(BlueprintCallable)
 		AWeaponDefault* GetCurrentWeapon();
 	UFUNCTION(BlueprintCallable)
@@ -111,6 +117,7 @@ public:
 		void WeaponReloadEnd(bool bIsSuccess, int32 AmmoSafe);
 	UFUNCTION()
 		void WeaponFire(UAnimMontage* Anim);
+
 	UFUNCTION(BlueprintNativeEvent)
 		void WeaponReloadStart_BP(UAnimMontage* Anim);
 	UFUNCTION(BlueprintNativeEvent)
@@ -127,5 +134,11 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 		int32 CurrentIndexWeapon = 0;
+
+	UFUNCTION()
+		void CharacterDead();
+	
+	void EnableRagdoll();
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 };
 

@@ -44,6 +44,11 @@ void ATDSPlayerController::OnResetVR()
 	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
 }
 
+void ATDSPlayerController::OnUnPossess()
+{
+	Super::OnUnPossess();
+}
+
 //void ATDSPlayerController::MoveToMouseCursor()
 //{
 //	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
