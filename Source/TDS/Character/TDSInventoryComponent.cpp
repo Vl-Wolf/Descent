@@ -445,7 +445,7 @@ void UTDSInventoryComponent::SetAdditionalInfoWeapon(int32 IndexWeapon, FAdditio
 			if (i == IndexWeapon)
 			{
 				WeaponSlots[i].AdditionalInfo = NewInfo;
-				bIsFind;
+				bIsFind = true;
 				OnWeaponAdditionalInfoChange.Broadcast(IndexWeapon, NewInfo);
 			}
 			i++;
