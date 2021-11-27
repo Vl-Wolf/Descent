@@ -38,7 +38,7 @@ public:
 
 	UPROPERTY()
 		FWeaponInfo WeaponSetting;
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Info")
 		FAdditionalWeaponInfo AdditionalWeaponInfo;
 
 protected:

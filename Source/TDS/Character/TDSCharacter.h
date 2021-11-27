@@ -8,11 +8,12 @@
 #include "TDS/Weapons/WeaponDefault.h"
 #include "TDS/Character/TDSInventoryComponent.h"
 #include "TDS/Character/TDSCharacterHealthComponent.h"
-
+#include "TDS/Interface/TDS_IGameActor.h"
+#include "TDS/StateEffects/TDS_StateEffect.h"
 #include "TDSCharacter.generated.h"
 
 UCLASS(Blueprintable)
-class ATDSCharacter : public ACharacter
+class ATDSCharacter : public ACharacter, public ITDS_IGameActor
 {
 	GENERATED_BODY()
 
@@ -79,6 +80,10 @@ public:
 	//Weapon
 	AWeaponDefault* CurrentWeapon = nullptr;
 
+	//Effect
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+		TSubclassOf<UTDS_StateEffect> AbilityEffect;
+	TArray<UTDS_StateEffect*> Effects;
 	
 	//Input
 	UFUNCTION()
@@ -132,8 +137,17 @@ public:
 	void TrySwitchNextWeapon();
 	void TrySwitchPreviosWeapon();
 
+	void TryAbilityEnabled();
+
 	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
 		int32 CurrentIndexWeapon = 0;
+
+	//Interface
+	EPhysicalSurface GetSurfaceType() override;
+	TArray<UTDS_StateEffect*> GetAllCurrentEffects() override;
+	void RemoveEffect(UTDS_StateEffect* RemoveEffect) override;
+	void AddEffect(UTDS_StateEffect* newEffect) override;
+	//End
 
 	UFUNCTION()
 		void CharacterDead();

@@ -4,7 +4,10 @@
 
 #include "Kismet/BlueprintFunctionLibrary.h"
 #include "Engine/DataTable.h"
+#include "TDS/StateEffects/TDS_StateEffect.h"
 #include "Types.generated.h"
+
+class UTDS_IGameActor;
 
 UENUM(BlueprintType)
 enum class EMovementState : uint8
@@ -74,6 +77,10 @@ struct FProjectileInfo
 	//FXHit
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX")
 		TMap<TEnumAsByte<EPhysicalSurface>, UParticleSystem*> HitFXs;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect")
+		TSubclassOf<UTDS_StateEffect> Effect = nullptr;
+
 	//Grenade
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Explosion")
 		UParticleSystem* ExploseFX = nullptr;
@@ -220,7 +227,7 @@ struct FWeaponInfo : public FTableRowBase
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Animation")
 		FAnimationWeaponInfo AnimationWeaponInfo;
-;
+
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Drop Mesh")
 		FDropMeshInfo MagasinDrop;
@@ -291,4 +298,9 @@ UCLASS()
 class TDS_API UTypes : public UBlueprintFunctionLibrary
 {
 	GENERATED_BODY()
+
+public:
+
+	UFUNCTION(BlueprintCallable)
+		static void AddEffectBySurfaceType(AActor* TakeEffectActor, TSubclassOf<UTDS_StateEffect> AddEffectClass, EPhysicalSurface SurfaceType);
 };
