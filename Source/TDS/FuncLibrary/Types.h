@@ -302,5 +302,5 @@ class TDS_API UTypes : public UBlueprintFunctionLibrary
 public:
 
 	UFUNCTION(BlueprintCallable)
-		static void AddEffectBySurfaceType(AActor* TakeEffectActor, TSubclassOf<UTDS_StateEffect> AddEffectClass, EPhysicalSurface SurfaceType);
+		static void AddEffectBySurfaceType(AActor* TakeEffectActor, FName BoneHit, TSubclassOf<UTDS_StateEffect> AddEffectClass, EPhysicalSurface SurfaceType);
 };

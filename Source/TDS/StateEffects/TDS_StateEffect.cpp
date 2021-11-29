@@ -5,8 +5,9 @@
 #include "TDS/Character/TDSHealthComponent.h"
 #include "TDS/Interface/TDS_IGameActor.h"
 #include "Kismet/GameplayStatics.h"
+#include "TDS/FuncLibrary/Types.h"
 
-bool UTDS_StateEffect::InitObject(AActor* Actor)
+bool UTDS_StateEffect::InitObject(AActor* Actor, FName BoneHit)
 {
 	myActor = Actor;
 
@@ -34,9 +35,9 @@ void UTDS_StateEffect::DestroyObject()
 	}
 }
 
-bool UTDS_StateEffect_ExecuteOnce::InitObject(AActor* Actor)
+bool UTDS_StateEffect_ExecuteOnce::InitObject(AActor* Actor, FName BoneHit)
 {
-	Super::InitObject(Actor);
+	Super::InitObject(Actor, BoneHit);
 	ExecuteOnce();
 	return true;
 }
@@ -60,24 +61,31 @@ void UTDS_StateEffect_ExecuteOnce::ExecuteOnce()
 	DestroyObject();
 }
 
-bool UTDS_StateEffect_ExecuteTimer::InitObject(AActor* Actor)
+bool UTDS_StateEffect_ExecuteTimer::InitObject(AActor* Actor, FName BoneHit)
 {
-	Super::InitObject(Actor);
+	Super::InitObject(Actor, BoneHit);
 
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle_EffectTimer, this, &UTDS_StateEffect_ExecuteTimer::DestroyObject, Timer, false);
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle_ExecuteTimer, this, &UTDS_StateEffect_ExecuteTimer::Execute, RateTimer, true);
 	
 	if (ParticleEffect)
 	{
-		FName NameBoneToAttached;
+		FName NameBoneToAttached = BoneHit;
 		FVector Location = FVector(0);
 
-		ParticleEmitter = UGameplayStatics::SpawnEmitterAttached(ParticleEffect, myActor->GetRootComponent(), NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+		USceneComponent* mySkeletalMesh = Cast<USceneComponent>(myActor->GetComponentByClass(USkeletalMeshComponent::StaticClass()));
+		if (mySkeletalMesh)
+		{
+			ParticleEmitter = UGameplayStatics::SpawnEmitterAttached(ParticleEffect, mySkeletalMesh, NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+		}
+		else
+		{
+			ParticleEmitter = UGameplayStatics::SpawnEmitterAttached(ParticleEffect, myActor->GetRootComponent(), NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+		}
 	}
 	
 	return true;
 }
-
 
 void UTDS_StateEffect_ExecuteTimer::DestroyObject()
 {
@@ -94,6 +102,72 @@ void UTDS_StateEffect_ExecuteTimer::Execute()
 		if (myHealthComponent)
 		{
 			myHealthComponent->ChangeHealthValue(Power);
+		}
+	}
+}
+
+bool UTDS_StateEffect_AreaOfEffect::InitObject(AActor* Actor, FName BoneHit)
+{
+	Super::InitObject(Actor, BoneHit);
+
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle_EffectTimer, this, &UTDS_StateEffect_AreaOfEffect::DestroyObject, Timer, false);
+	GetWorld()->GetTimerManager().SetTimer(TimerHandle_ExecuteTimer, this, &UTDS_StateEffect_AreaOfEffect::FindActor, RateTimer, true);
+
+
+	if (ParticleEffectAoE)
+	{
+		FName NameBoneToAttached = BoneHit;
+		FVector Location = FVector(0);
+
+		USceneComponent* mySkeletalMesh = Cast<USceneComponent>(myActor->GetComponentByClass(USkeletalMeshComponent::StaticClass()));
+		if (mySkeletalMesh)
+		{
+			ParticleEmitterAoE = UGameplayStatics::SpawnEmitterAttached(ParticleEffect, mySkeletalMesh, NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+		}
+		else
+		{
+			ParticleEmitterAoE = UGameplayStatics::SpawnEmitterAttached(ParticleEffect, myActor->GetRootComponent(), NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+		}
+	}
+
+	return true;
+}
+
+void UTDS_StateEffect_AreaOfEffect::DestroyObject()
+{
+	/*ParticleEmitterAoE->DestroyComponent();
+	ParticleEmitterAoE = nullptr;*/
+	Super::DestroyObject();
+}
+
+void UTDS_StateEffect_AreaOfEffect::FindActor()
+{
+	if (myActor)
+	{
+		FVector ActorLoc = myActor->GetActorLocation();
+		FVector ActorForward = myActor->GetActorForwardVector();
+		FVector StartEnd = ActorLoc + ActorForward;
+		TArray<AActor*> ActorsToIngnore;
+		TArray<FHitResult> HitResult;
+
+
+		bool Hit = UKismetSystemLibrary::SphereTraceMulti(GetWorld(), StartEnd, StartEnd, RadiusArea,
+			UEngineTypes::ConvertToTraceType(ECC_Visibility), false, ActorsToIngnore,
+			EDrawDebugTrace::None, HitResult, true, FLinearColor::Red, FLinearColor::Green, 5.0f);
+
+		if (Hit)
+		{
+			int32 i = 0;
+			while (i < HitResult.Num())
+			{
+				EPhysicalSurface mySurfaceType = UGameplayStatics::GetSurfaceType(HitResult[i]);
+				UTypes::AddEffectBySurfaceType(HitResult[i].GetActor(), HitResult[i].BoneName, Effect, mySurfaceType);
+				i++;
+			}
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("TDS_StateEffect_AreaOfEffect - Array empty"));
 		}
 	}
 }

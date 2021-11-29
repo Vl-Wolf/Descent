@@ -18,7 +18,7 @@ class TDS_API UTDS_StateEffect : public UObject
 	
 public:
 
-	virtual bool InitObject(AActor* Actor);
+	virtual bool InitObject(AActor* Actor, FName BoneHit);
 	virtual void DestroyObject();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
@@ -37,13 +37,14 @@ class TDS_API UTDS_StateEffect_ExecuteOnce : public UTDS_StateEffect
 
 public:
 
-	bool InitObject(AActor* Actor) override;
+	bool InitObject(AActor* Actor, FName BoneHit) override;
 	void DestroyObject() override;
 
 	virtual void ExecuteOnce();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting Execute Once")
 		float Power = 20.0f;
+
 };
 
 UCLASS()
@@ -53,7 +54,7 @@ class TDS_API UTDS_StateEffect_ExecuteTimer : public UTDS_StateEffect
 
 public:
 
-	bool InitObject(AActor* Actor) override;
+	bool InitObject(AActor* Actor, FName BoneHit) override;
 	void DestroyObject() override;
 
 	virtual void Execute();
@@ -72,4 +73,26 @@ public:
 		UParticleSystem* ParticleEffect = nullptr;
 
 	UParticleSystemComponent* ParticleEmitter = nullptr;
+};
+
+UCLASS()
+class TDS_API UTDS_StateEffect_AreaOfEffect : public UTDS_StateEffect_ExecuteTimer
+{
+	GENERATED_BODY()
+
+public:
+
+	bool InitObject(AActor* Actor, FName BoneHit) override;
+	void DestroyObject() override;
+
+	virtual void FindActor();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting Area of Effect")
+		float RadiusArea = 400.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect Damage")
+		TSubclassOf<UTDS_StateEffect> Effect = nullptr;
+
+	//не работает исправить!!!
+	UParticleSystem* ParticleEffectAoE = ParticleEffect;
+	UParticleSystemComponent* ParticleEmitterAoE = ParticleEmitter;
 };
