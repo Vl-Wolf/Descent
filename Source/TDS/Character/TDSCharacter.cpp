@@ -103,6 +103,14 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* NewInputComponent
 	NewInputComponent->BindAxis(TEXT("MoveForward"), this, &ATDSCharacter::InputAxisX);
 	NewInputComponent->BindAxis(TEXT("MoveRight"), this, &ATDSCharacter::InputAxisY);
 
+	NewInputComponent->BindAction(TEXT("ChangeToSprint"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputSprintPressed);
+	NewInputComponent->BindAction(TEXT("ChangeToWalk"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputWalkPressed);
+	NewInputComponent->BindAction(TEXT("AimEvent"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputAimPressed);
+	NewInputComponent->BindAction(TEXT("ChangeToSprint"), EInputEvent::IE_Released, this, &ATDSCharacter::InputSprintReleased);
+	NewInputComponent->BindAction(TEXT("ChangeToWalk"), EInputEvent::IE_Released, this, &ATDSCharacter::InputWalkReleased);
+	NewInputComponent->BindAction(TEXT("AimEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::InputAimReleased);
+
+
 	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputAttackPressed);
 	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::InputAttackReleased);
 	NewInputComponent->BindAction(TEXT("ReloadEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::TryReloadWeapon);
@@ -111,6 +119,31 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* NewInputComponent
 	NewInputComponent->BindAction(TEXT("SwitchPreviosWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchPreviosWeapon);
 
 	NewInputComponent->BindAction(TEXT("AbilityAction"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TryAbilityEnabled);
+
+	NewInputComponent->BindAction(TEXT("DropCurrentWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::DropCurrenWeapon);
+
+	TArray<FKey> HotKeys;
+	HotKeys.Add(EKeys::One);
+	HotKeys.Add(EKeys::Two);
+	HotKeys.Add(EKeys::Three);
+	HotKeys.Add(EKeys::Four);
+	HotKeys.Add(EKeys::Five);
+	HotKeys.Add(EKeys::Six);
+	HotKeys.Add(EKeys::Seven);
+	HotKeys.Add(EKeys::Eight);
+	HotKeys.Add(EKeys::Nine);
+	HotKeys.Add(EKeys::Zero);
+
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<1>);
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<2>);
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<3>);
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<4>);
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<5>);
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<6>);
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<7>);
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<8>);
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<9>);
+	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<0>);
 }
 
 void ATDSCharacter::InputAxisX(float Value)
@@ -133,6 +166,42 @@ void ATDSCharacter::InputAttackReleased()
 	AttackCharEvent(false);
 }
 
+void ATDSCharacter::InputWalkPressed()
+{
+	WalkEnabled = true;
+	ChangeMovementState();
+}
+
+void ATDSCharacter::InputWalkReleased()
+{
+	WalkEnabled = false;
+	ChangeMovementState();
+}
+
+void ATDSCharacter::InputSprintPressed()
+{
+	SprintRunEnabled = true;
+	ChangeMovementState();
+}
+
+void ATDSCharacter::InputSprintReleased()
+{
+	SprintRunEnabled = false;
+	ChangeMovementState();
+}
+
+void ATDSCharacter::InputAimPressed()
+{
+	AimEnabled = true;
+	ChangeMovementState();
+}
+
+void ATDSCharacter::InputAimReleased()
+{
+	AimEnabled = false;
+	ChangeMovementState();
+}
+
 void ATDSCharacter::MovementTick(float DeltaTime)
 {
 	if (bIsAlive)
@@ -152,7 +221,6 @@ void ATDSCharacter::MovementTick(float DeltaTime)
 			if (myController)
 			{
 				FHitResult ResultHit;
-				//myController->GetHitResultUnderCursorByChannel(ETraceTypeQuery::TraceTypeQuery6, false, ResultHit);
 				myController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
 				float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
 				SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
@@ -192,9 +260,25 @@ void ATDSCharacter::MovementTick(float DeltaTime)
 
 }
 
+
+EMovementState ATDSCharacter::GetMovementState()
+{
+	return MovementState;
+}
+
+TArray<UTDS_StateEffect*> ATDSCharacter::GetCurrentEffectsOnChar()
+{
+	return Effects;
+}
+
+int32 ATDSCharacter::GetCurrentWeaponIndex()
+{
+	return CurrentIndexWeapon;
+}
+
 void ATDSCharacter::AttackCharEvent(bool bIsFiring)
 {
-	AWeaponDefault* myWeapon = nullptr; //!!! was //= nullptr
+	AWeaponDefault* myWeapon = nullptr;
 	myWeapon = GetCurrentWeapon();
 	if (myWeapon)
 	{
@@ -311,9 +395,8 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 					FAttachmentTransformRules Rule(EAttachmentRule::SnapToTarget, false);
 					myWeapon->AttachToComponent(GetMesh(), Rule, FName("WeaponSocketRightHand"));
 					CurrentWeapon = myWeapon;
-
 					myWeapon->WeaponSetting = myWeaponInfo;
-					//myWeapon->AdditionalWeaponInfo.Round = myWeaponInfo.MaxRound;
+
 					myWeapon->ReloadTimeDebug = myWeaponInfo.ReloadTime;
 					myWeapon->UpdateStateWeapon(MovementState);
 
@@ -343,10 +426,6 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 	}
 }
 
-void ATDSCharacter::RemoveCurrentWeapon()
-{
-
-}
 
 void ATDSCharacter::TryReloadWeapon()
 {
@@ -373,6 +452,40 @@ void ATDSCharacter::WeaponReloadEnd(bool bIsSuccess, int32 AmmoTake)
 	}
 
 	WeaponReloadEnd_BP(bIsSuccess);
+}
+
+bool ATDSCharacter::TrySwitchWeaponToIndexByKeyInput(int32 ToIndex)
+{
+	bool bIsSucces = true;
+	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.IsValidIndex(ToIndex))
+	{
+		if (CurrentIndexWeapon != ToIndex && InventoryComponent)
+		{
+			int32 OldIndex = CurrentIndexWeapon;
+			FAdditionalWeaponInfo OldInfo;
+
+			if (CurrentWeapon)
+			{
+				OldInfo = CurrentWeapon->AdditionalWeaponInfo;
+				if (CurrentWeapon->WeaponReloading)
+				{
+					CurrentWeapon->CancelReload();
+				}
+			}
+			
+			bIsSucces = InventoryComponent->SwitchWeaponByIndex(ToIndex, OldIndex, OldInfo);
+		}
+	}
+	return bIsSucces;
+}
+
+void ATDSCharacter::DropCurrenWeapon()
+{
+	if (InventoryComponent)
+	{
+		FDropItem ItemInfo;
+		InventoryComponent->DropWeaponByIndex(CurrentIndexWeapon, ItemInfo);
+	}
 }
 
 void ATDSCharacter::WeaponFire(UAnimMontage* Anim)
@@ -402,9 +515,10 @@ UDecalComponent* ATDSCharacter::GetCursorToWorld()
 	return CurrentCursor;
 }
 
+
 void ATDSCharacter::TrySwitchNextWeapon()
 {
-	if (InventoryComponent->WeaponSlots.Num() > 1)
+	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.Num() > 1)
 	{
 		int8 OldIndex = CurrentIndexWeapon;
 		FAdditionalWeaponInfo OldInfo;
@@ -418,7 +532,7 @@ void ATDSCharacter::TrySwitchNextWeapon()
 		}
 		if (InventoryComponent)
 		{
-			if (InventoryComponent->SwitchWeaponToIndex(CurrentIndexWeapon + 1, OldIndex, OldInfo, true))
+			if (InventoryComponent->SwitchWeaponToIndexByNextPreviosIndex(CurrentIndexWeapon + 1, OldIndex, OldInfo, true))
 			{
 
 			}
@@ -428,7 +542,7 @@ void ATDSCharacter::TrySwitchNextWeapon()
 
 void ATDSCharacter::TrySwitchPreviosWeapon()
 {
-	if (InventoryComponent->WeaponSlots.Num() > 1)
+	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.Num() > 1)
 	{
 		int8 OldIndex = CurrentIndexWeapon;
 		FAdditionalWeaponInfo OldInfo;
@@ -442,7 +556,7 @@ void ATDSCharacter::TrySwitchPreviosWeapon()
 		}
 		if (InventoryComponent)
 		{
-			if (InventoryComponent->SwitchWeaponToIndex(CurrentIndexWeapon - 1, OldIndex, OldInfo, false))
+			if (InventoryComponent->SwitchWeaponToIndexByNextPreviosIndex(CurrentIndexWeapon - 1, OldIndex, OldInfo, false))
 			{
 
 			}
@@ -507,6 +621,7 @@ void ATDSCharacter::CharacterDead()
 		TimeAnim = DeadsAnim[rnd]->GetPlayLength();
 		GetMesh()->GetAnimInstance()->Montage_Play(DeadsAnim[rnd]);
 	}
+
 	bIsAlive = false;
 
 	UnPossessed();

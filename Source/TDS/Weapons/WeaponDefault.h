@@ -88,6 +88,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic Debug")//Remove
 		float ReloadTimeDebug = 0.0f;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FireLogic")
+		FName IdWeaponName;
+
 	bool BlockFire = false;
 
 	bool ShouldReduceDispersion = false;

@@ -20,6 +20,62 @@ class ATDSCharacter : public ACharacter, public ITDS_IGameActor
 protected:
 	virtual void BeginPlay() override;
 
+
+	//Inputs Start
+	void InputAxisX(float Value);
+	void InputAxisY(float Value);
+	
+	void InputAttackPressed();
+	void InputAttackReleased();
+
+	void InputWalkPressed();
+	void InputWalkReleased();
+
+	void InputSprintPressed();
+	void InputSprintReleased();
+
+	void InputAimPressed();
+	void InputAimReleased();
+
+	//Inventory Inputs
+	void TrySwitchNextWeapon();
+	void TrySwitchPreviosWeapon();
+
+	//Ability Inputs
+	void TryAbilityEnabled();
+
+	template<int32 Id>
+	void TKeyPressed()
+	{
+		TrySwitchWeaponToIndexByKeyInput(Id);
+	}
+	//Inputs End
+
+	//Inputs Flags
+	float AxisX = 0.0f;
+	float AxisY = 0.0f;
+
+	bool SprintRunEnabled = false;
+	bool WalkEnabled = false;
+	bool AimEnabled = false;
+
+	bool bIsAlive = true;
+
+	EMovementState MovementState = EMovementState::Run_State;
+
+	AWeaponDefault* CurrentWeapon = nullptr;
+
+	UDecalComponent* CurrentCursor = nullptr;
+
+	TArray<UTDS_StateEffect*> Effects;
+
+	int32 CurrentIndexWeapon = 0;
+
+	UFUNCTION()
+	void CharacterDead();
+	void EnableRagdoll();
+
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 public:
 	ATDSCharacter();
 
@@ -40,7 +96,23 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
 		class UTDSCharacterHealthComponent* HealthComponent;
 
+	//Cursor material on decal
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
+		UMaterialInterface* CursorMaterial = nullptr;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
+		FVector CursorSize = FVector(20.0f, 40.0f, 40.0f);
+	//Default move rule and state charecter
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
+		FCharacterSpeed MovementInfo;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Death")
+		TArray<UAnimMontage*> DeadsAnim;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
+		TSubclassOf<UTDS_StateEffect> AbilityEffect;
+
 private:
+
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
 	class UCameraComponent* TopDownCameraComponent;
@@ -51,77 +123,31 @@ private:
 
 public:
 
-	//Cursor
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
-		UMaterialInterface* CursorMaterial = nullptr;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
-		FVector CursorSize = FVector(20.0f, 40.0f, 40.0f);
-	UDecalComponent* CurrentCursor = nullptr;
-
-	//Movement
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		EMovementState MovementState = EMovementState::Run_State;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		FCharacterSpeed MovementInfo;
-
-	//Movement flags
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		bool SprintRunEnabled = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		bool WalkEnabled = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		bool AimEnabled = false;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		bool bIsAlive = true;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Death")
-		TArray<UAnimMontage*> DeadsAnim;
-
-	//Weapon
-	AWeaponDefault* CurrentWeapon = nullptr;
-
-	//Effect
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-		TSubclassOf<UTDS_StateEffect> AbilityEffect;
-	TArray<UTDS_StateEffect*> Effects;
-	
-	//Input
-	UFUNCTION()
-		void InputAxisX(float Value);
-	UFUNCTION()
-		void InputAxisY(float Value);
-	UFUNCTION()
-		void InputAttackPressed();
-	UFUNCTION()
-		void InputAttackReleased();
-
-	float AxisX = 0.0f;
-	float AxisY = 0.0f;
-
+	//Tick func Start
 	UFUNCTION()
 		void MovementTick(float DeltaTime);
+	//Tick func End
 
-	UFUNCTION(BlueprintCallable)
-		void AttackCharEvent(bool bIsFiring);
-	UFUNCTION(BlueprintCallable)
-		void CharacterUpdate();
-	UFUNCTION(BlueprintCallable)
-		void ChangeMovementState();
+	//Func
+	void CharacterUpdate();
+	void ChangeMovementState();
 
-	UFUNCTION(BlueprintCallable)
-		AWeaponDefault* GetCurrentWeapon();
-	UFUNCTION(BlueprintCallable)
+	void AttackCharEvent(bool bIsFiring);
+
+		
+	UFUNCTION()
 		void InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon);
-	UFUNCTION(BlueprintCallable)
-		void RemoveCurrentWeapon();
-	UFUNCTION(BlueprintCallable)
-		void TryReloadWeapon();
+	void TryReloadWeapon();
+
+	UFUNCTION()
+		void WeaponFire(UAnimMontage* Anim);
 	UFUNCTION()
 		void WeaponReloadStart(UAnimMontage* Anim);
 	UFUNCTION()
 		void WeaponReloadEnd(bool bIsSuccess, int32 AmmoSafe);
-	UFUNCTION()
-		void WeaponFire(UAnimMontage* Anim);
+	//
+	bool TrySwitchWeaponToIndexByKeyInput(int32 ToIndex);
+	void DropCurrenWeapon();
 
 	UFUNCTION(BlueprintNativeEvent)
 		void WeaponReloadStart_BP(UAnimMontage* Anim);
@@ -130,29 +156,27 @@ public:
 	UFUNCTION(BlueprintNativeEvent)
 		void WeaponFire_BP(UAnimMontage* Anim);
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+		AWeaponDefault* GetCurrentWeapon();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
 		UDecalComponent* GetCursorToWorld();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+		EMovementState GetMovementState();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+		TArray<UTDS_StateEffect*> GetCurrentEffectsOnChar();
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+		int32 GetCurrentWeaponIndex();
 
-	//inventory
-	void TrySwitchNextWeapon();
-	void TrySwitchPreviosWeapon();
-
-	void TryAbilityEnabled();
-
-	UPROPERTY(BlueprintReadOnly, EditDefaultsOnly)
-		int32 CurrentIndexWeapon = 0;
-
+	/*UFUNCTION(BlueprintCallable, BlueprintPure)
+		void RemoveCurrentWeapon();*/
+	//Func End
+	
 	//Interface
 	EPhysicalSurface GetSurfaceType() override;
 	TArray<UTDS_StateEffect*> GetAllCurrentEffects() override;
 	void RemoveEffect(UTDS_StateEffect* RemoveEffect) override;
 	void AddEffect(UTDS_StateEffect* newEffect) override;
-	//End
-
-	UFUNCTION()
-		void CharacterDead();
+	//Interface End
 	
-	void EnableRagdoll();
-	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 };
 

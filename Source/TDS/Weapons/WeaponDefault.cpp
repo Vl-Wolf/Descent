@@ -305,8 +305,10 @@ void AWeaponDefault::Fire()
 					{
 						UGameplayStatics::PlaySoundAtLocation(GetWorld(), WeaponSetting.ProjectileSetting.HitSound, Hit.ImpactPoint);
 					}
+
+					UTypes::AddEffectBySurfaceType(Hit.GetActor(), Hit.BoneName, ProjectileInfo.Effect, mySurfaceType);
+
 					UGameplayStatics::ApplyPointDamage(Hit.GetActor(), WeaponSetting.ProjectileSetting.ProjectileDamage, Hit.TraceStart, Hit, GetInstigatorController(), this, NULL);
-					//UGameplayStatics::ApplyDamage(Hit.GetActor(), WeaponSetting.ProjectileSetting.ProjectileDamage, GetInstigatorController(), this, NULL);
 				}
 			}
 
@@ -437,8 +439,6 @@ void AWeaponDefault::InitReload()
 {
 	WeaponReloading = true;
 
-	//UGameplayStatics::SpawnSoundAtLocation(GetWorld(), WeaponSetting.SoundReloadWeapon, ShootLocation->GetComponentLocation());
-
 	ReloadTimer = WeaponSetting.ReloadTime;
 
 	UAnimMontage* AnimPlay = nullptr;
@@ -516,13 +516,19 @@ bool AWeaponDefault::CheckCanWeaponReload()
 	bool result = true; 
 	if (GetOwner())
 	{
-		UTDSInventoryComponent* MyInv = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
-		if (MyInv)
+		UTDSInventoryComponent* myInv = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
+		if (myInv)
 		{
 			int8 AviableAmmoForWeapon;
-			if (!MyInv->CheckAmmoForWeapon(WeaponSetting.WeaponType, AviableAmmoForWeapon))
+			if (!myInv->CheckAmmoForWeapon(WeaponSetting.WeaponType, AviableAmmoForWeapon))
 			{
 				result = false;
+				myInv->OnWeaponNotHaveRound.Broadcast(myInv->GetWeaponIndexSlotByName(IdWeaponName));
+
+			}
+			else
+			{
+				myInv->OnWeaponHaveRound.Broadcast(myInv->GetWeaponIndexSlotByName(IdWeaponName));
 			}
 		}
 	}
@@ -534,10 +540,10 @@ int8 AWeaponDefault::GetAviableAmmoForReload()
 	int8 AviableAmmoForWeapon = WeaponSetting.MaxRound;
 	if (GetOwner())
 	{
-		UTDSInventoryComponent* MyInv = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
-		if (MyInv)
+		UTDSInventoryComponent* myInv = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
+		if (myInv)
 		{
-			if (MyInv->CheckAmmoForWeapon(WeaponSetting.WeaponType, AviableAmmoForWeapon))
+			if (myInv->CheckAmmoForWeapon(WeaponSetting.WeaponType, AviableAmmoForWeapon))
 			{
 				AviableAmmoForWeapon = AviableAmmoForWeapon;
 			}
