@@ -30,6 +30,8 @@ void UTDSCharacterHealthComponent::ChangeShieldValue(float ChangeValue)
 {
 	Shield += ChangeValue;
 
+	OnShieldChange.Broadcast(Shield, ChangeValue);
+
 	if (Shield > 100.0f)
 	{
 		Shield = 100.0f;
@@ -48,7 +50,6 @@ void UTDSCharacterHealthComponent::ChangeShieldValue(float ChangeValue)
 		GetWorld()->GetTimerManager().ClearTimer(TimerHandle_ShieldRecoveryRateTimer);
 	}
 
-	OnShieldChange.Broadcast(Shield, ChangeValue);
 }
 
 void UTDSCharacterHealthComponent::CoolDownShieldEnd()
@@ -79,4 +80,9 @@ void UTDSCharacterHealthComponent::RecoveryShield()
 	}
 
 	OnShieldChange.Broadcast(Shield, ShieldRecoveryValue);
+}
+
+float UTDSCharacterHealthComponent::GetShieldValue()
+{
+	return Shield;
 }

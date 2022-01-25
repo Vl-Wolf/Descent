@@ -177,6 +177,8 @@ public:
 	void RemoveEffect(UTDS_StateEffect* RemoveEffect) override;
 	void AddEffect(UTDS_StateEffect* newEffect) override;
 	//Interface End
-	
+
+	UFUNCTION(BlueprintNativeEvent)
+		void CharacterDead_BP();
 };
 

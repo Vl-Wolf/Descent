@@ -158,7 +158,11 @@ void ATDSCharacter::InputAxisY(float Value)
 
 void ATDSCharacter::InputAttackPressed()
 {
-	AttackCharEvent(true);
+	if (bIsAlive)
+	{
+		AttackCharEvent(true);
+	}
+	
 }
 
 void ATDSCharacter::InputAttackReleased()
@@ -429,7 +433,7 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 
 void ATDSCharacter::TryReloadWeapon()
 {
-	if (CurrentWeapon && !CurrentWeapon->WeaponReloading)
+	if (bIsAlive && CurrentWeapon && !CurrentWeapon->WeaponReloading)
 	{
 		if (CurrentWeapon->GetWeaponRound() <= CurrentWeapon->WeaponSetting.MaxRound && CurrentWeapon->CheckCanWeaponReload())
 		{
@@ -500,14 +504,17 @@ void ATDSCharacter::WeaponFire(UAnimMontage* Anim)
 
 void ATDSCharacter::WeaponReloadStart_BP_Implementation(UAnimMontage* Anim)
 {
+	//BP
 }
 
 void ATDSCharacter::WeaponReloadEnd_BP_Implementation(bool bIsSuccess)
 {
+	//BP
 }
 
 void ATDSCharacter::WeaponFire_BP_Implementation(UAnimMontage* Anim)
 {
+	//BP
 }
 
 UDecalComponent* ATDSCharacter::GetCursorToWorld()
@@ -612,6 +619,11 @@ void ATDSCharacter::AddEffect(UTDS_StateEffect* newEffect)
 	Effects.Add(newEffect);
 }
 
+void ATDSCharacter::CharacterDead_BP_Implementation()
+{
+	//BP
+}
+
 void ATDSCharacter::CharacterDead()
 {
 	float TimeAnim = 0.0f;
@@ -624,11 +636,20 @@ void ATDSCharacter::CharacterDead()
 
 	bIsAlive = false;
 
+	if (GetController())
+	{
+		GetController()->UnPossess();
+	}
+
 	UnPossessed();
 
 	GetWorldTimerManager().SetTimer(TimerHandle_RagDollTimer, this, &ATDSCharacter::EnableRagdoll, TimeAnim, false);
 
 	GetCursorToWorld()->SetVisibility(false);
+
+	AttackCharEvent(false);
+
+	CharacterDead_BP();
 }
 
 void ATDSCharacter::EnableRagdoll()
