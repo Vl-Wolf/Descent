@@ -280,6 +280,11 @@ int32 ATDSCharacter::GetCurrentWeaponIndex()
 	return CurrentIndexWeapon;
 }
 
+bool ATDSCharacter::GetIsAlive()
+{
+	return bIsAlive;
+}
+
 void ATDSCharacter::AttackCharEvent(bool bIsFiring)
 {
 	AWeaponDefault* myWeapon = nullptr;
