@@ -38,7 +38,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	void InitProjectile(FProjectileInfo InitParam);
+	UFUNCTION(BlueprintCallable)
+		void InitProjectile(FProjectileInfo InitParam);
 	UFUNCTION()
 		virtual	void BulletCollisionSphereHit(class UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
 	UFUNCTION()

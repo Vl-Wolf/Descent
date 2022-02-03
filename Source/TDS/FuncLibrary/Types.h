@@ -68,6 +68,8 @@ struct FProjectileInfo
 		float ProjectileLifeTime = 20.0f;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileSetting")
 		float ProjectileInitSpeed = 2000.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ProjectileSetting")
+		float ProjectileMaxSpeed = 2000.0f;
 	//DecalHit
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FX")
 		TMap<TEnumAsByte<EPhysicalSurface>, UMaterialInterface*> HitDecals;
