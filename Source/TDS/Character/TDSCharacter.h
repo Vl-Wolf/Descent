@@ -61,6 +61,7 @@ protected:
 
 	bool bIsAlive = true;
 
+	UPROPERTY(Replicated)
 	EMovementState MovementState = EMovementState::Run_State;
 
 	AWeaponDefault* CurrentWeapon = nullptr;
@@ -182,5 +183,15 @@ public:
 
 	UFUNCTION(BlueprintNativeEvent)
 		void CharacterDead_BP();
+
+	UFUNCTION(Server, Unreliable)
+		void SetActorRotationByYaw_OnServer(float Yaw);
+	UFUNCTION(NetMulticast, Unreliable)
+		void SetActorRotationByYaw_Multicast(float Yaw);
+
+	UFUNCTION(Server, Reliable)
+		void SetMovementState_OnServer(EMovementState NewState);
+	UFUNCTION(NetMulticast, Reliable)
+		void SetMovementState_Multicast(EMovementState NewState);
 };
 
