@@ -253,23 +253,26 @@ void ATDSCharacter::MovementTick(float DeltaTime)
 					if (CurrentWeapon)
 					{
 						FVector Displacement = FVector(0);
+						bool bIsReduceDispersion = false;
 						switch (MovementState)
 						{
 						case EMovementState::Aim_State:
 							Displacement = FVector(0.0f, 0.0f, 160.0f);
-							CurrentWeapon->ShouldReduceDispersion = true;
+							//CurrentWeapon->ShouldReduceDispersion = true;
+							bIsReduceDispersion = true;
 							break;
 						case EMovementState::AimWalk_State:
 							Displacement = FVector(0.0f, 0.0f, 160.0f);
-							CurrentWeapon->ShouldReduceDispersion = true;
+							//CurrentWeapon->ShouldReduceDispersion = true;
+							bIsReduceDispersion = true;
 							break;
 						case EMovementState::Walk_State:
 							Displacement = FVector(0.0f, 0.0f, 120.0f);
-							CurrentWeapon->ShouldReduceDispersion = false;
+							//CurrentWeapon->ShouldReduceDispersion = false;
 							break;
 						case EMovementState::Run_State:
 							Displacement = FVector(0.0f, 0.0f, 120.0f);
-							CurrentWeapon->ShouldReduceDispersion = false;
+							//CurrentWeapon->ShouldReduceDispersion = false;
 							break;
 						case EMovementState::Sprint_State:
 							break;
@@ -277,7 +280,8 @@ void ATDSCharacter::MovementTick(float DeltaTime)
 							break;
 						}
 
-						CurrentWeapon->ShootEndLocation = ResultHit.Location + Displacement;
+						//CurrentWeapon->ShootEndLocation = ResultHit.Location + Displacement;
+						CurrentWeapon->UpdateWeaponByCharacterMovementState_OnServer(ResultHit.Location + Displacement, bIsReduceDispersion);
 					}
 				}
 			}
@@ -312,7 +316,7 @@ void ATDSCharacter::AttackCharEvent(bool bIsFiring)
 	myWeapon = GetCurrentWeapon();
 	if (myWeapon)
 	{
-		myWeapon->SetWeaponStateFire(bIsFiring);
+		myWeapon->SetWeaponStateFire_OnServer(bIsFiring);
 	}
 	else
 	{
@@ -395,7 +399,7 @@ void ATDSCharacter::ChangeMovementState()
 	AWeaponDefault* myWeapon = GetCurrentWeapon();
 	if (myWeapon)
 	{
-		myWeapon->UpdateStateWeapon(MovementState);
+		myWeapon->UpdateStateWeapon_OnServer(NewState);
 	}
 }
 
@@ -406,6 +410,7 @@ AWeaponDefault* ATDSCharacter::GetCurrentWeapon()
 
 void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon)
 {
+	//on server
 	if (CurrentWeapon)
 	{
 		CurrentWeapon->Destroy();
@@ -436,7 +441,7 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 					myWeapon->WeaponSetting = myWeaponInfo;
 
 					myWeapon->ReloadTimeDebug = myWeaponInfo.ReloadTime;
-					myWeapon->UpdateStateWeapon(MovementState);
+					myWeapon->UpdateStateWeapon_OnServer(MovementState);
 
 					myWeapon->AdditionalWeaponInfo = WeaponAdditionalInfo;
 					CurrentIndexWeapon = NewCurrentIndexWeapon;
@@ -748,4 +753,6 @@ void ATDSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ATDSCharacter, MovementState);
+	DOREPLIFETIME(ATDSCharacter, CurrentWeapon);
+
 }
