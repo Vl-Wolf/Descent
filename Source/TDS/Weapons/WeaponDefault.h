@@ -36,9 +36,9 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
 		class UArrowComponent* ShootLocation = nullptr;
 
-	UPROPERTY()
+	UPROPERTY(VisibleAnywhere)
 		FWeaponInfo WeaponSetting;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Weapon Info")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon Info")
 		FAdditionalWeaponInfo AdditionalWeaponInfo;
 
 protected:
@@ -63,8 +63,8 @@ public:
 		bool WeaponReloading = false;
 		bool WeaponAiming = false;
 
-	UFUNCTION(BlueprintCallable)
-		void SetWeaponStateFire(bool bIsFire);
+	UFUNCTION(Server, Reliable, BlueprintCallable)
+		void SetWeaponStateFire_OnServer(bool bIsFire);
 
 	bool CheckWeaponCanFire();
 
@@ -73,7 +73,8 @@ public:
 	UFUNCTION()
 	void Fire();
 
-	void UpdateStateWeapon(EMovementState NewMovementState);
+	UFUNCTION(Server, Reliable)
+	void UpdateStateWeapon_OnServer(EMovementState NewMovementState);
 	void ChangeDispersionByShoot();
 	float GetCurrentDispersion() const;
 	FVector ApplyDispersionToShoot(FVector DirectionShoot) const;
@@ -106,6 +107,7 @@ public:
 	bool DropShellBulletsFlag = false;
 	float DropShellBulletsTimer = -1.0f;
 
+	UPROPERTY(Replicated)
 	FVector ShootEndLocation = FVector(0);
 
 	UFUNCTION(BlueprintCallable)
@@ -118,11 +120,23 @@ public:
 	bool CheckCanWeaponReload();
 	int8 GetAviableAmmoForReload();
 
-	UFUNCTION()
-		void InitDropMesh(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion);
+	UFUNCTION(Server, Reliable)
+		void InitDropMesh_OnServer(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 		bool ShowDebug = false;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 		float SizeVectorToChangeShootDirectionLogic = 100.0f;
+
+
+	//Network
+	UFUNCTION(Server, Unreliable)
+		void UpdateWeaponByCharacterMovementState_OnServer(FVector NewShootEndLocation, bool NewShouldReduceDispersion);
+	UFUNCTION(NetMulticast, Unreliable)
+		void AnimWeaponStart_Multicast(UAnimMontage* Anim);
+	UFUNCTION(NetMulticast, Unreliable)
+		void ShellDropFire_Multicast(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion, FVector LocalDir);
+	
+	UFUNCTION(NetMulticast, Unreliable)
+		void FXWeaponFire_Multicast(UParticleSystem* FXFire, USoundBase* SoundFire);
 };

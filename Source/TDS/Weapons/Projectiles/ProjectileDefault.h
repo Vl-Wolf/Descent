@@ -48,4 +48,16 @@ public:
 		void BulletCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
 	UFUNCTION()
 		virtual void ImpactProjectile();
+
+	UFUNCTION(NetMulticast, Reliable)
+		void InitVisualMeshProjectile_Multicast(UStaticMesh* newMesh, FTransform MeshRelative);
+	UFUNCTION(NetMulticast, Reliable)
+		void InitVisualTrailProjectile_Multicast(UParticleSystem* newTrail, FTransform TrailRelative);
+	UFUNCTION(NetMulticast, Reliable)
+		void SpawnHitDecal_Multicast(UMaterialInterface* DecalMaterial, UPrimitiveComponent* OtherComponet, FHitResult HitResult);
+	UFUNCTION(NetMulticast, Reliable)
+		void SpawnHitFX_Multicast(UParticleSystem* FXTemplate, FHitResult HitResult);
+	UFUNCTION(NetMulticast, Reliable)
+		void SpawnHitSound_Multicast(USoundBase* HitSound, FHitResult HitResult);
+
 };

@@ -579,25 +579,12 @@ TArray<FAmmoSlot> UTDSInventoryComponent::GetAmmoSlots()
 	return AmmoSlots;
 }
 
-void UTDSInventoryComponent::InitInventory(TArray<FWeaponSlot> NewWeaponSlotsInfo, TArray<FAmmoSlot> NewAmmoSlotsInfo)
+void UTDSInventoryComponent::InitInventory_OnServer_Implementation(const TArray<FWeaponSlot>& NewWeaponSlotsInfo, const TArray<FAmmoSlot>& NewAmmoSlotsInfo)
 {
 	WeaponSlots = NewWeaponSlotsInfo;
 	AmmoSlots = NewAmmoSlotsInfo;
 	//Find init weaponsSlots and First Init Weapon
-	for (int8 i = 0; i < WeaponSlots.Num(); i++)
-	{
-		UTDSGameInstance* myGI = Cast<UTDSGameInstance>(GetWorld()->GetGameInstance());
-		if (myGI)
-		{
-			if (!WeaponSlots[i].NameItem.IsNone())
-			{
-				//FWeaponInfo Info;
-				//if (myGI->GetWeaponInfoByName(WeaponSlots[i].NameItem, Info))
-					//WeaponSlots[i].AdditionalInfo.Round = Info.MaxRound;
-			}
-
-		}
-	}
+	
 
 	MaxSlotsWeapon = WeaponSlots.Num();
 
