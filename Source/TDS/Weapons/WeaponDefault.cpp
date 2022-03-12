@@ -47,11 +47,15 @@ void AWeaponDefault::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	FireTick(DeltaTime);
-	ReloadTick(DeltaTime);
-	DispersionTick(DeltaTime);
-	DropTick(DeltaTime);
-	ShellDropTick(DeltaTime);
+	if (HasAuthority())
+	{
+		FireTick(DeltaTime);
+		ReloadTick(DeltaTime);
+		DispersionTick(DeltaTime);
+		DropTick(DeltaTime);
+		ShellDropTick(DeltaTime);
+	}
+	
 }
 
 void AWeaponDefault::FireTick(float DeltaTime)
@@ -446,6 +450,7 @@ int32 AWeaponDefault::GetWeaponRound()
 
 void AWeaponDefault::InitReload()
 {
+	//on server
 	WeaponReloading = true;
 
 	ReloadTimer = WeaponSetting.ReloadTime;
@@ -660,7 +665,8 @@ void AWeaponDefault::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLi
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(AWeaponDefault, AdditionalWeaponInfo);
-
+	DOREPLIFETIME(AWeaponDefault, WeaponReloading);
+	DOREPLIFETIME(AWeaponDefault, ShootEndLocation);
 
 }
 

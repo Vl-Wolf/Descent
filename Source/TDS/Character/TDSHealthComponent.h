@@ -42,5 +42,8 @@ public:
 		void SetCurrentHealth(float NewHealth);
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	virtual	void ChangeHealthValue(float ChangeValue);
-
+	UFUNCTION(NetMulticast, Reliable)
+		void HealthChangeEvent_Multicast(float newHealth, float value);
+	UFUNCTION(NetMulticast, Reliable)
+		void DeadEvent_Multicast();
 };

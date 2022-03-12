@@ -30,7 +30,8 @@ void UTDSCharacterHealthComponent::ChangeShieldValue(float ChangeValue)
 {
 	Shield += ChangeValue;
 
-	OnShieldChange.Broadcast(Shield, ChangeValue);
+	ShieldChangeEvent_Multicast(Shield, ChangeValue);
+	//OnShieldChange.Broadcast(Shield, ChangeValue);
 
 	if (Shield > 100.0f)
 	{
@@ -79,10 +80,16 @@ void UTDSCharacterHealthComponent::RecoveryShield()
 		Shield = tmp;
 	}
 
-	OnShieldChange.Broadcast(Shield, ShieldRecoveryValue);
+	ShieldChangeEvent_Multicast(Shield, ShieldRecoveryValue);
+	//OnShieldChange.Broadcast(Shield, ShieldRecoveryValue);
 }
 
 float UTDSCharacterHealthComponent::GetShieldValue()
 {
 	return Shield;
+}
+
+void UTDSCharacterHealthComponent::ShieldChangeEvent_Multicast_Implementation(float newShield, float Damage)
+{
+	OnShieldChange.Broadcast(newShield, Damage);
 }

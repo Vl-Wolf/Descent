@@ -49,9 +49,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
 		FOnWeaponHaveRound OnWeaponHaveRound;
 
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 		TArray<FWeaponSlot> WeaponSlots;
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Weapons")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, Category = "Weapons")
 		TArray<FAmmoSlot> AmmoSlots;
 
 	int32 MaxSlotsWeapon = 0;
@@ -86,10 +86,10 @@ public:
 		bool CheckCanTakeWeapon(int32& FreeSlot);
 	UFUNCTION(BlueprintCallable, Category = "Interface")
 		bool SwitchWeaponToInventory(FWeaponSlot NewWeapon, int32 IndexSlot, int32 CurrentIndexWeaponChar, FDropItem& DropItemInfo);
-	UFUNCTION(BlueprintCallable, Category = "Interface")
-		bool TryGetWeaponToInventory(FWeaponSlot NewWeapon);
-	UFUNCTION(BlueprintCallable, Category = "Interface")
-		void DropWeaponByIndex(int32 ByIndex, FDropItem& DropItemInfo);
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Interface")
+		void TryGetWeaponToInventory_OnServer(AActor* PickUpActor, FWeaponSlot NewWeapon);
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Interface")
+		void DropWeaponByIndex_OnServer(int32 ByIndex);
 
 	UFUNCTION(BlueprintCallable, Category = "Interface")
 		bool GetDropItemInfoFromInventory(int32 IndexSlot, FDropItem& DropItemInfo);
@@ -101,4 +101,21 @@ public:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Inv")
 		void InitInventory_OnServer(const TArray<FWeaponSlot>& NewWeaponSlotsInfo, const TArray<FAmmoSlot>& NewAmmoSlotsInfo);
+
+	UFUNCTION(Server, Reliable)
+		void SwitchWeaponEvent_OnServer(FName WeaponName, FAdditionalWeaponInfo AdditionalInfo, int32 IndexSlot);
+	UFUNCTION(NetMulticast, Reliable)
+		void AmmoChangeEvent_Multicast(EWeaponType TypeWeapon, int32 Cout);
+	UFUNCTION(NetMulticast, Reliable)
+		void WeaponAdditionalInfoChangeEvent_Multicast(int32 IndexWeapon, FAdditionalWeaponInfo AdditionalWeaponInfo);
+	UFUNCTION(NetMulticast, Reliable)
+		void WeaponAmmoEmptyEvent_Multicast(EWeaponType TypeWeapon);
+	UFUNCTION(NetMulticast, Reliable)
+		void WeaponAmmoAviableEvent_Multicast(EWeaponType TypeWeapon);
+	UFUNCTION(NetMulticast, Reliable)
+		void UpdateWeaponSlotsEvent_Multicast(int32 IndexSlotChange, FWeaponSlot NewInfo);
+	UFUNCTION(NetMulticast, Reliable)
+		void WeaponNotHaveRoundEvent_Multicast(int32 IndexSlotWeapon);
+	UFUNCTION(NetMulticast, Reliable)
+		void WeaponHaveRoundEvent_Multicast(int32 IndexSlotWeapon);
 };

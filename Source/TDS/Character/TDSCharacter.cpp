@@ -416,6 +416,7 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 		CurrentWeapon->Destroy();
 		CurrentWeapon = nullptr;
 	}
+
 	UTDSGameInstance* myGI = Cast<UTDSGameInstance>(GetGameInstance());
 	FWeaponInfo myWeaponInfo;
 	if (myGI)
@@ -474,10 +475,7 @@ void ATDSCharacter::TryReloadWeapon()
 {
 	if (bIsAlive && CurrentWeapon && !CurrentWeapon->WeaponReloading)
 	{
-		if (CurrentWeapon->GetWeaponRound() <= CurrentWeapon->WeaponSetting.MaxRound && CurrentWeapon->CheckCanWeaponReload())
-		{
-			CurrentWeapon->InitReload();
-		}
+		TryReloadWeapon_OnServer();
 	}
 }
 
@@ -497,7 +495,7 @@ void ATDSCharacter::WeaponReloadEnd(bool bIsSuccess, int32 AmmoTake)
 	WeaponReloadEnd_BP(bIsSuccess);
 }
 
-bool ATDSCharacter::TrySwitchWeaponToIndexByKeyInput(int32 ToIndex)
+void ATDSCharacter::TrySwitchWeaponToIndexByKeyInput_OnServer_Implementation(int32 ToIndex)
 {
 	bool bIsSucces = true;
 	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.IsValidIndex(ToIndex))
@@ -519,15 +517,13 @@ bool ATDSCharacter::TrySwitchWeaponToIndexByKeyInput(int32 ToIndex)
 			bIsSucces = InventoryComponent->SwitchWeaponByIndex(ToIndex, OldIndex, OldInfo);
 		}
 	}
-	return bIsSucces;
 }
 
 void ATDSCharacter::DropCurrenWeapon()
 {
 	if (InventoryComponent)
 	{
-		FDropItem ItemInfo;
-		InventoryComponent->DropWeaponByIndex(CurrentIndexWeapon, ItemInfo);
+		InventoryComponent->DropWeaponByIndex_OnServer(CurrentIndexWeapon);
 	}
 }
 
@@ -658,6 +654,14 @@ void ATDSCharacter::AddEffect(UTDS_StateEffect* newEffect)
 	Effects.Add(newEffect);
 }
 
+void ATDSCharacter::TryReloadWeapon_OnServer_Implementation()
+{
+	if (CurrentWeapon->GetWeaponRound() <= CurrentWeapon->WeaponSetting.MaxRound && CurrentWeapon->CheckCanWeaponReload())
+	{
+		CurrentWeapon->InitReload();
+	}
+}
+
 void ATDSCharacter::SetActorRotationByYaw_OnServer_Implementation(float Yaw)
 {
 	SetActorRotationByYaw_Multicast(Yaw);
@@ -683,6 +687,13 @@ void ATDSCharacter::SetMovementState_Multicast_Implementation(EMovementState New
 	CharacterUpdate();
 }
 
+void ATDSCharacter::PlayAnim_Multicast_Implementation(UAnimMontage* Anim)
+{
+	if (GetMesh() && GetMesh()->GetAnimInstance())
+	{
+		GetMesh()->GetAnimInstance()->Montage_Play(Anim);
+	}
+}
 
 void ATDSCharacter::CharacterDead_BP_Implementation()
 {
@@ -696,7 +707,8 @@ void ATDSCharacter::CharacterDead()
 	if (DeadsAnim.IsValidIndex(rnd) && DeadsAnim[rnd] && GetMesh() && GetMesh()->GetAnimInstance())
 	{
 		TimeAnim = DeadsAnim[rnd]->GetPlayLength();
-		GetMesh()->GetAnimInstance()->Montage_Play(DeadsAnim[rnd]);
+		//GetMesh()->GetAnimInstance()->Montage_Play(DeadsAnim[rnd]);
+		PlayAnim_Multicast(DeadsAnim[rnd]);
 	}
 
 	bIsAlive = false;
@@ -754,5 +766,6 @@ void ATDSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 
 	DOREPLIFETIME(ATDSCharacter, MovementState);
 	DOREPLIFETIME(ATDSCharacter, CurrentWeapon);
-
+	DOREPLIFETIME(ATDSCharacter, CurrentIndexWeapon);
 }
+
