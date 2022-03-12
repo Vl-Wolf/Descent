@@ -10,6 +10,7 @@ UTDSHealthComponent::UTDSHealthComponent()
 	// off to improve performance if you don't need them.
 	PrimaryComponentTick.bCanEverTick = true;
 
+	SetIsReplicatedByDefault(true);
 	// ...
 }
 
@@ -48,7 +49,8 @@ void UTDSHealthComponent::ChangeHealthValue(float ChangeValue)
 
 	Health += ChangeValue;
 
-	OnHealthChange.Broadcast(Health, ChangeValue);
+	HealthChangeEvent_Multicast(Health, ChangeValue);
+	//OnHealthChange.Broadcast(Health, ChangeValue);
 
 	if (Health > 100.0f)
 	{
@@ -58,8 +60,19 @@ void UTDSHealthComponent::ChangeHealthValue(float ChangeValue)
 	{
 		if (Health < 0.0f)
 		{
-			OnDead.Broadcast();
+			DeadEvent_Multicast();
+			//OnDead.Broadcast();
 		}
 	}
+}
+
+void UTDSHealthComponent::HealthChangeEvent_Multicast_Implementation(float newHealth, float value)
+{
+	OnHealthChange.Broadcast(newHealth, value);
+}
+
+void UTDSHealthComponent::DeadEvent_Multicast_Implementation()
+{
+	OnDead.Broadcast();
 }
 

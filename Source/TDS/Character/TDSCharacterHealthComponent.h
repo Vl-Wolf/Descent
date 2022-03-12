@@ -46,5 +46,7 @@ public:
 
 	UFUNCTION(BlueprintCallable)
 		float GetShieldValue();
-
+	
+	UFUNCTION(NetMulticast, Reliable)
+		void ShieldChangeEvent_Multicast(float newShield, float Damage);
 };
