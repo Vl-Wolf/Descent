@@ -17,6 +17,8 @@
 #include "TDS/Weapons/Projectiles/ProjectileDefault.h"
 #include "TDS/TDS.h"
 #include "Net/UnrealNetwork.h"
+#include "Particles/ParticleSystemComponent.h"
+#include "Engine/ActorChannel.h"
 
 
 ATDSCharacter::ATDSCharacter()
@@ -644,14 +646,20 @@ TArray<UTDS_StateEffect*> ATDSCharacter::GetAllCurrentEffects()
 	return Effects;
 }
 
-void ATDSCharacter::RemoveEffect(UTDS_StateEffect* RemoveEffect)
+void ATDSCharacter::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect)
 {
 	Effects.Remove(RemoveEffect);
+
+	SwitchEffect(RemoveEffect, false);
+	EffectRemove = RemoveEffect;
 }
 
-void ATDSCharacter::AddEffect(UTDS_StateEffect* newEffect)
+void ATDSCharacter::AddEffect_Implementation(UTDS_StateEffect* newEffect)
 {
 	Effects.Add(newEffect);
+
+	SwitchEffect(newEffect, true);
+	EffectAdd = newEffect;
 }
 
 void ATDSCharacter::TryReloadWeapon_OnServer_Implementation()
@@ -744,7 +752,7 @@ float ATDSCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 
 	if (bIsAlive)
 	{
-		HealthComponent->ChangeHealthValue(-DamageAmount);
+		HealthComponent->ChangeHealthValue_OnServer(-DamageAmount);
 	}
 
 	if (DamageEvent.IsOfType(FRadialDamageEvent::ClassID))
@@ -767,5 +775,78 @@ void ATDSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ATDSCharacter, MovementState);
 	DOREPLIFETIME(ATDSCharacter, CurrentWeapon);
 	DOREPLIFETIME(ATDSCharacter, CurrentIndexWeapon);
+	DOREPLIFETIME(ATDSCharacter, Effects);
+	DOREPLIFETIME(ATDSCharacter, EffectAdd);
+	DOREPLIFETIME(ATDSCharacter, EffectRemove);
 }
 
+void ATDSCharacter::EffectAdd_OnRep()
+{
+	if (EffectAdd)
+	{
+		SwitchEffect(EffectAdd, true);
+	}
+}
+
+void ATDSCharacter::EffectRemove_OnRep()
+{
+	if (EffectRemove)
+	{
+		SwitchEffect(EffectRemove, false);
+	}
+}
+
+void ATDSCharacter::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd)
+{
+	if (bIsAdd)
+	{
+		if (Effect && Effect->ParticleEffect)
+		{
+			FName NameBoneToAttached = Effect->NameBone;
+			FVector Loc = FVector(0);
+
+			USkeletalMeshComponent* myMesh = GetMesh();
+			
+			if (myMesh)
+			{
+				UParticleSystemComponent* newParticleSystem = UGameplayStatics::UGameplayStatics::SpawnEmitterAttached(Effect->ParticleEffect, myMesh, 
+					NameBoneToAttached, Loc, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+				ParticleSystemEffects.Add(newParticleSystem);
+			}
+		}
+	}
+	else
+	{
+		int32 i = 0;
+		bool bIsFind = false;
+		if (ParticleSystemEffects.Num() > 0)
+		{
+			while (i < ParticleSystemEffects.Num(), !bIsFind)
+			{
+				if (ParticleSystemEffects[i]->Template && Effect->ParticleEffect && Effect->ParticleEffect == ParticleSystemEffects[i]->Template)
+				{
+					bIsFind = true;
+					ParticleSystemEffects[i]->DeactivateSystem();
+					ParticleSystemEffects[i]->DestroyComponent();
+					ParticleSystemEffects.RemoveAt(i);
+				}
+				i++;
+			}
+		}
+	}
+}
+
+bool ATDSCharacter::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
+{
+	bool Wrote = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
+
+	for (int32 i = 0; i < Effects.Num(); i++)
+	{
+		if (Effects[i]) 
+		{ 
+			Wrote |= Channel->ReplicateSubobject(Effects[i], *Bunch, *RepFlags); 
+		}
+	}
+
+	return Wrote;
+}

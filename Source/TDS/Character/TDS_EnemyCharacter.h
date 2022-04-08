@@ -3,31 +3,33 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "GameFramework/Actor.h"
-#include "TDS/StateEffects/TDS_StateEffect.h"
+#include "GameFramework/Character.h"
 #include "TDS/Interface/TDS_IGameActor.h"
-#include "TDS_EnviromentStructure.generated.h"
+#include "TDS_EnemyCharacter.generated.h"
+
 
 UCLASS()
-class TDS_API ATDS_EnviromentStructure : public AActor, public ITDS_IGameActor
+class TDS_API ATDS_EnemyCharacter : public ACharacter, public ITDS_IGameActor
 {
 	GENERATED_BODY()
-	
-public:	
-	// Sets default values for this actor's properties
-	ATDS_EnviromentStructure();
+
+public:
+	// Sets default values for this character's properties
+	ATDS_EnemyCharacter();
 
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
 	bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	EPhysicalSurface GetSurfaceType() override;
-	TArray<UTDS_StateEffect*> GetAllCurrentEffects() override;
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 		void RemoveEffect(UTDS_StateEffect* RemoveEffect);
 	void RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect) override;
@@ -35,13 +37,14 @@ public:
 		void AddEffect(UTDS_StateEffect* newEffect);
 	void AddEffect_Implementation(UTDS_StateEffect* newEffect) override;
 
+
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Setting")
 		TArray<UTDS_StateEffect*> Effects;
-
 	UPROPERTY(ReplicatedUsing = EffectAdd_OnRep)
 		UTDS_StateEffect* EffectAdd = nullptr;
 	UPROPERTY(ReplicatedUsing = EffectRemove_OnRep)
 		UTDS_StateEffect* EffectRemove = nullptr;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
 		TArray<UParticleSystemComponent*> ParticleSystemEffects;
 
@@ -51,8 +54,6 @@ public:
 		void EffectRemove_OnRep();
 	UFUNCTION()
 		void SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd);
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-		FVector OffsetEffect = FVector(0);
-
+	
 
 };
