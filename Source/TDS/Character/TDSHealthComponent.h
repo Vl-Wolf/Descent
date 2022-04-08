@@ -27,7 +27,8 @@ protected:
 	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	float Health = 100.0f;
+	UPROPERTY(Replicated)
+		float Health = 100.0f;
 
 public:	
 	// Called every frame
@@ -40,8 +41,8 @@ public:
 		float GetCurrentHealth();
 	UFUNCTION(BlueprintCallable, Category = "Health")
 		void SetCurrentHealth(float NewHealth);
-	UFUNCTION(BlueprintCallable, Category = "Health")
-	virtual	void ChangeHealthValue(float ChangeValue);
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Health")
+	virtual	void ChangeHealthValue_OnServer(float ChangeValue);
 	UFUNCTION(NetMulticast, Reliable)
 		void HealthChangeEvent_Multicast(float newHealth, float value);
 	UFUNCTION(NetMulticast, Reliable)

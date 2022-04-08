@@ -18,6 +18,9 @@ class ATDSCharacter : public ACharacter, public ITDS_IGameActor
 	GENERATED_BODY()
 
 protected:
+
+	bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
+
 	virtual void BeginPlay() override;
 
 
@@ -68,7 +71,16 @@ protected:
 
 	UDecalComponent* CurrentCursor = nullptr;
 
-	TArray<UTDS_StateEffect*> Effects;
+	UPROPERTY(Replicated)
+		TArray<UTDS_StateEffect*> Effects;
+	UPROPERTY(ReplicatedUsing = EffectAdd_OnRep)
+		UTDS_StateEffect* EffectAdd = nullptr;
+	UPROPERTY(ReplicatedUsing = EffectRemove_OnRep)
+		UTDS_StateEffect* EffectRemove = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
+		TArray<UParticleSystemComponent*> ParticleSystemEffects;
+
 	UPROPERTY(Replicated)
 	int32 CurrentIndexWeapon = 0;
 
@@ -178,8 +190,12 @@ public:
 	//Interface
 	EPhysicalSurface GetSurfaceType() override;
 	TArray<UTDS_StateEffect*> GetAllCurrentEffects() override;
-	void RemoveEffect(UTDS_StateEffect* RemoveEffect) override;
-	void AddEffect(UTDS_StateEffect* newEffect) override;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+		void RemoveEffect(UTDS_StateEffect* RemoveEffect);
+	void RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect) override;
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+		void AddEffect(UTDS_StateEffect* newEffect);
+	void AddEffect_Implementation(UTDS_StateEffect* newEffect) override;
 	//Interface End
 
 	UFUNCTION(BlueprintNativeEvent)
@@ -198,5 +214,13 @@ public:
 		void TryReloadWeapon_OnServer();
 	UFUNCTION(NetMulticast, Reliable)
 		void PlayAnim_Multicast(UAnimMontage* Anim);
+
+	UFUNCTION()
+		void EffectAdd_OnRep();
+	UFUNCTION()
+		void EffectRemove_OnRep();
+
+	UFUNCTION()
+		void SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd);
 };
 

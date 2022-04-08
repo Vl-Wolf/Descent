@@ -28,8 +28,10 @@ public:
 	virtual EPhysicalSurface GetSurfaceType();
 
 	virtual TArray<UTDS_StateEffect*> GetAllCurrentEffects();
-	virtual void RemoveEffect(UTDS_StateEffect* RemoveEffect);
-	virtual void AddEffect(UTDS_StateEffect* newEffect);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void RemoveEffect(UTDS_StateEffect* RemoveEffect);
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	void AddEffect(UTDS_StateEffect* newEffect);
 
 	//inv
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)

@@ -16,12 +16,12 @@ TArray<UTDS_StateEffect*> ITDS_IGameActor::GetAllCurrentEffects()
 	return Effect;
 }
 
-void ITDS_IGameActor::RemoveEffect(UTDS_StateEffect* RemoveEffect)
-{
-
-}
-
-void ITDS_IGameActor::AddEffect(UTDS_StateEffect* newEffect)
-{
-
-}
+//void ITDS_IGameActor::RemoveEffect(UTDS_StateEffect* RemoveEffect)
+//{
+//
+//}
+//
+//void ITDS_IGameActor::AddEffect(UTDS_StateEffect* newEffect)
+//{
+//
+//}

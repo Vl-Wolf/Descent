@@ -3,7 +3,7 @@
 
 #include "TDSCharacterHealthComponent.h"
 
-void UTDSCharacterHealthComponent::ChangeHealthValue(float ChangeValue)
+void UTDSCharacterHealthComponent::ChangeHealthValue_OnServer(float ChangeValue)
 {
 	float CurrentDamage = ChangeValue * CoefDamage;
 
@@ -17,7 +17,7 @@ void UTDSCharacterHealthComponent::ChangeHealthValue(float ChangeValue)
 	}
 	else
 	{
-		Super::ChangeHealthValue(ChangeValue);
+		Super::ChangeHealthValue_OnServer(ChangeValue);
 	}
 }
 
