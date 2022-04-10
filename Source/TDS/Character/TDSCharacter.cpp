@@ -170,7 +170,7 @@ void ATDSCharacter::InputAxisY(float Value)
 
 void ATDSCharacter::InputAttackPressed()
 {
-	if (bIsAlive)
+	if (HealthComponent && HealthComponent->GetIsAlive())
 	{
 		AttackCharEvent(true);
 	}
@@ -220,7 +220,7 @@ void ATDSCharacter::InputAimReleased()
 
 void ATDSCharacter::MovementTick(float DeltaTime)
 {
-	if (bIsAlive)
+	if (HealthComponent && HealthComponent->GetIsAlive())
 	{
 
 		if (GetController() && GetController()->IsLocalController())
@@ -309,7 +309,13 @@ int32 ATDSCharacter::GetCurrentWeaponIndex()
 
 bool ATDSCharacter::GetIsAlive()
 {
-	return bIsAlive;
+	bool result = false;
+	if (HealthComponent)
+	{
+		result = HealthComponent->GetIsAlive();
+
+	}
+	return result;
 }
 
 void ATDSCharacter::AttackCharEvent(bool bIsFiring)
@@ -475,7 +481,7 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 
 void ATDSCharacter::TryReloadWeapon()
 {
-	if (bIsAlive && CurrentWeapon && !CurrentWeapon->WeaponReloading)
+	if (HealthComponent && HealthComponent->GetIsAlive() && CurrentWeapon && !CurrentWeapon->WeaponReloading)
 	{
 		TryReloadWeapon_OnServer();
 	}
@@ -710,37 +716,51 @@ void ATDSCharacter::CharacterDead_BP_Implementation()
 
 void ATDSCharacter::CharacterDead()
 {
-	float TimeAnim = 0.0f;
-	int32 rnd = FMath::RandHelper(DeadsAnim.Num());
-	if (DeadsAnim.IsValidIndex(rnd) && DeadsAnim[rnd] && GetMesh() && GetMesh()->GetAnimInstance())
+	if (HasAuthority())
 	{
-		TimeAnim = DeadsAnim[rnd]->GetPlayLength();
-		//GetMesh()->GetAnimInstance()->Montage_Play(DeadsAnim[rnd]);
-		PlayAnim_Multicast(DeadsAnim[rnd]);
+		float TimeAnim = 0.0f;
+		int32 rnd = FMath::RandHelper(DeadsAnim.Num());
+		if (DeadsAnim.IsValidIndex(rnd) && DeadsAnim[rnd] && GetMesh() && GetMesh()->GetAnimInstance())
+		{
+			TimeAnim = DeadsAnim[rnd]->GetPlayLength();
+			//GetMesh()->GetAnimInstance()->Montage_Play(DeadsAnim[rnd]);
+			PlayAnim_Multicast(DeadsAnim[rnd]);
+
+
+
+			if (GetController())
+			{
+				GetController()->UnPossess();
+			}
+
+			GetWorldTimerManager().SetTimer(TimerHandle_RagDollTimer, this, &ATDSCharacter::EnableRagdoll_Multicast, TimeAnim, false);
+		}
+	}
+	else
+	{
+		if (GetCursorToWorld())
+		{
+			GetCursorToWorld()->SetVisibility(false);
+		}
+
+		AttackCharEvent(false);
 	}
 
-	bIsAlive = false;
-
-	if (GetController())
+	if (GetCapsuleComponent())
 	{
-		GetController()->UnPossess();
+		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	}
-
-	UnPossessed();
-
-	GetWorldTimerManager().SetTimer(TimerHandle_RagDollTimer, this, &ATDSCharacter::EnableRagdoll, TimeAnim, false);
-
-	GetCursorToWorld()->SetVisibility(false);
-
-	AttackCharEvent(false);
 
 	CharacterDead_BP();
 }
 
-void ATDSCharacter::EnableRagdoll()
+void ATDSCharacter::EnableRagdoll_Multicast_Implementation()
 {
 	if (GetMesh())
 	{
+
+		GetMesh()->SetCollisionObjectType(ECC_PhysicsBody);
+		GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Block);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
 		GetMesh()->SetSimulatePhysics(true);
 	}
@@ -750,7 +770,7 @@ float ATDSCharacter::TakeDamage(float DamageAmount, FDamageEvent const& DamageEv
 {
 	float ActualDamage = Super::TakeDamage(DamageAmount, DamageEvent, EventInstigator, DamageCauser);
 
-	if (bIsAlive)
+	if (HealthComponent && HealthComponent->GetIsAlive())
 	{
 		HealthComponent->ChangeHealthValue_OnServer(-DamageAmount);
 	}
