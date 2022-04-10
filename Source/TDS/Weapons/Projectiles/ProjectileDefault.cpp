@@ -32,8 +32,8 @@ AProjectileDefault::AProjectileDefault()
 
 	BulletProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Bullet ProjectileMovement"));
 	BulletProjectileMovement->UpdatedComponent = RootComponent;
-	BulletProjectileMovement->InitialSpeed = ProjectileSetting.ProjectileInitSpeed;
-	BulletProjectileMovement->MaxSpeed = ProjectileSetting.ProjectileInitSpeed;
+	//BulletProjectileMovement->InitialSpeed = ProjectileSetting.ProjectileInitSpeed;
+	//BulletProjectileMovement->MaxSpeed = ProjectileSetting.ProjectileInitSpeed;
 
 	BulletProjectileMovement->bRotationFollowsVelocity = true;
 	BulletProjectileMovement->bShouldBounce = true;
@@ -59,10 +59,10 @@ void AProjectileDefault::Tick(float DeltaTime)
 
 void AProjectileDefault::InitProjectile(FProjectileInfo InitParam)
 {
-	BulletProjectileMovement->InitialSpeed = InitParam.ProjectileInitSpeed;
-	BulletProjectileMovement->MaxSpeed = InitParam.ProjectileMaxSpeed;
+	//BulletProjectileMovement->InitialSpeed = InitParam.ProjectileInitSpeed;
+	//BulletProjectileMovement->MaxSpeed = InitParam.ProjectileMaxSpeed;
 	this->SetLifeSpan(InitParam.ProjectileLifeTime);
-	ProjectileSetting = InitParam;
+	
 
 	if (InitParam.ProjectileStaticMesh)
 	{
@@ -82,6 +82,10 @@ void AProjectileDefault::InitProjectile(FProjectileInfo InitParam)
 		BulletFX->DestroyComponent();
 	}
 
+
+	InitVelocity_Multicast(InitParam.ProjectileInitSpeed, InitParam.ProjectileMaxSpeed);
+
+	ProjectileSetting = InitParam;
 }
 
 void AProjectileDefault::BulletCollisionSphereHit(UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit)
@@ -135,6 +139,7 @@ void AProjectileDefault::ImpactProjectile()
 	this->Destroy();
 }
 
+
 void AProjectileDefault::SpawnHitDecal_Multicast_Implementation(UMaterialInterface* DecalMaterial, UPrimitiveComponent* OtherComponet, FHitResult HitResult)
 {
 	UGameplayStatics::SpawnDecalAttached(DecalMaterial, FVector(20.0f), OtherComponet, NAME_None, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation(), EAttachLocation::KeepWorldPosition, 10.0f);
@@ -161,4 +166,24 @@ void AProjectileDefault::InitVisualTrailProjectile_Multicast_Implementation(UPar
 {
 	BulletFX->SetTemplate(newTrail);
 	BulletFX->SetRelativeTransform(TrailRelative);
+	
+}
+
+void AProjectileDefault::InitVelocity_Multicast_Implementation(float InitSpeed, float MaxSpeed)
+{
+	if (BulletProjectileMovement)
+	{
+		BulletProjectileMovement->Velocity = GetActorForwardVector() * InitSpeed;
+		BulletProjectileMovement->MaxSpeed = MaxSpeed;
+		BulletProjectileMovement->InitialSpeed = InitSpeed;
+	}
+}
+
+void AProjectileDefault::PostNetReceiveVelocity(const FVector& NewVelocity)
+{
+	if (BulletProjectileMovement)
+	{
+		BulletProjectileMovement->Velocity = NewVelocity;
+		
+	}
 }

@@ -29,6 +29,8 @@ protected:
 
 	UPROPERTY(Replicated)
 		float Health = 100.0f;
+	UPROPERTY(Replicated)
+		bool bIsAlive = true;
 
 public:	
 	// Called every frame
@@ -41,6 +43,8 @@ public:
 		float GetCurrentHealth();
 	UFUNCTION(BlueprintCallable, Category = "Health")
 		void SetCurrentHealth(float NewHealth);
+	UFUNCTION(BlueprintCallable, Category = "Health")
+		bool GetIsAlive();
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "Health")
 	virtual	void ChangeHealthValue_OnServer(float ChangeValue);
 	UFUNCTION(NetMulticast, Reliable)

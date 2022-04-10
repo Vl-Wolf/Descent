@@ -62,8 +62,6 @@ protected:
 	bool WalkEnabled = false;
 	bool AimEnabled = false;
 
-	bool bIsAlive = true;
-
 	UPROPERTY(Replicated)
 	EMovementState MovementState = EMovementState::Run_State;
 	UPROPERTY(Replicated)
@@ -86,7 +84,8 @@ protected:
 
 	UFUNCTION()
 	void CharacterDead();
-	void EnableRagdoll();
+	UFUNCTION(NetMulticast, Reliable)
+	void EnableRagdoll_Multicast();
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 public:
