@@ -716,6 +716,8 @@ void ATDSCharacter::CharacterDead_BP_Implementation()
 
 void ATDSCharacter::CharacterDead()
 {
+	CharacterDead_BP();
+
 	if (HasAuthority())
 	{
 		float TimeAnim = 0.0f;
@@ -725,15 +727,19 @@ void ATDSCharacter::CharacterDead()
 			TimeAnim = DeadsAnim[rnd]->GetPlayLength();
 			//GetMesh()->GetAnimInstance()->Montage_Play(DeadsAnim[rnd]);
 			PlayAnim_Multicast(DeadsAnim[rnd]);
+		}
 
+		if (GetController())
+		{
+			GetController()->UnPossess();
+		}
 
+		GetWorldTimerManager().SetTimer(TimerHandle_RagDollTimer, this, &ATDSCharacter::EnableRagdoll_Multicast, TimeAnim, false);
 
-			if (GetController())
-			{
-				GetController()->UnPossess();
-			}
-
-			GetWorldTimerManager().SetTimer(TimerHandle_RagDollTimer, this, &ATDSCharacter::EnableRagdoll_Multicast, TimeAnim, false);
+		SetLifeSpan(20.0f);
+		if (GetCurrentWeapon())
+		{
+			GetCurrentWeapon()->SetLifeSpan(20.0f);
 		}
 	}
 	else
@@ -750,8 +756,6 @@ void ATDSCharacter::CharacterDead()
 	{
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 	}
-
-	CharacterDead_BP();
 }
 
 void ATDSCharacter::EnableRagdoll_Multicast_Implementation()
