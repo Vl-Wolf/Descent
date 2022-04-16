@@ -28,7 +28,13 @@ public:
 
 	virtual void ImpactProjectile() override;
 
-	void Explose();
+	UFUNCTION(Server, Reliable)
+	void Explose_OnServer();
+
+	UFUNCTION(NetMulticast, Reliable)
+		void SpawnExploseFX_Multicast(UParticleSystem* FXTemplate);
+	UFUNCTION(NetMulticast, Reliable)
+		void SpawnExploseSound_Multicast(USoundBase* ExploseSound);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenade")
 	bool TimerEnabled = false;
