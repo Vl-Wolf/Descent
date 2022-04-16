@@ -146,4 +146,11 @@ public:
 	UFUNCTION(NetMulticast, Unreliable)
 		void FXWeaponFire_Multicast(UParticleSystem* FXFire, USoundBase* SoundFire);
 
+	UFUNCTION(NetMulticast, Reliable)
+		void SpawnTraceHitDecal_Multicast(UMaterialInterface* DecalMaterial, FHitResult HitResult);
+	UFUNCTION(NetMulticast, Reliable)
+		void SpawnTraceHitFX_Multicast(UParticleSystem* FXTemplate, FHitResult HitResult);
+	UFUNCTION(NetMulticast, Reliable)
+		void SpawnTraceHitSound_Multicast(USoundBase* HitSound, FHitResult HitResult);
+
 };
