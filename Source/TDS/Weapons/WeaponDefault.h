@@ -41,14 +41,49 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon Info")
 		FAdditionalWeaponInfo AdditionalWeaponInfo;
 
+	//Timers
+	float FireTimer = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic")
+		float ReloadTimer = 0.0f;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic Debug")//Remove
+		float ReloadTimeDebug = 0.0f;
+
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FireLogic")
+		FName IdWeaponName;
+
+	//Flags
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FireLogic")
+		bool WeaponFiring = false;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic")
+		bool WeaponReloading = false;
+	bool WeaponAiming = false;
+	bool BlockFire = false;
+
+	//Dispersion
+	bool ShouldReduceDispersion = false;
+	float CurrentDispersion = 0.0f;
+	float CurrentDispersionMax = 1.0f;
+	float CurrentDispersionMin = 0.1f;
+	float CurrentDispersionRecoil = 0.1f;
+	float CurrentDispersionReduction = 0.1f;
+
+	//Timer Drop magazine on reload
+	bool DropMagasinFlag = false;
+	float DropMagasinTimer = -1.0f;
+
+	//Timer Drop shell 
+	bool DropShellBulletsFlag = false;
+	float DropShellBulletsTimer = -1.0f;
+
+	UPROPERTY(Replicated)
+		FVector ShootEndLocation = FVector(0);
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-public:	
-	// Ticks
-	virtual void Tick(float DeltaTime) override;
-
+	//Tick
 	void FireTick(float DeltaTime);
 	void ReloadTick(float DeltaTime);
 	void DispersionTick(float DeltaTime);
@@ -57,11 +92,12 @@ public:
 
 	void WeaponInit();
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FireLogic")
-		bool WeaponFiring = false;
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic")
-		bool WeaponReloading = false;
-		bool WeaponAiming = false;
+	UFUNCTION()
+		void Fire();
+
+public:	
+	// Ticks
+	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
 		void SetWeaponStateFire_OnServer(bool bIsFire);
@@ -69,9 +105,6 @@ public:
 	bool CheckWeaponCanFire();
 
 	FProjectileInfo GetProjectile();
-
-	UFUNCTION()
-	void Fire();
 
 	UFUNCTION(Server, Reliable)
 	void UpdateStateWeapon_OnServer(EMovementState NewMovementState);
@@ -82,36 +115,9 @@ public:
 	FVector GetFireEndLocation() const;
 	int8 GetNumberProjectileByShoot() const;
 
-	//timers
-	float FireTimer = 0.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic")
-		float ReloadTimer = 0.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic Debug")//Remove
-		float ReloadTimeDebug = 0.0f;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FireLogic")
-		FName IdWeaponName;
-
-	bool BlockFire = false;
-
-	bool ShouldReduceDispersion = false;
-	float CurrentDispersion = 0.0f;
-	float CurrentDispersionMax = 1.0f;
-	float CurrentDispersionMin = 0.1f;
-	float CurrentDispersionRecoil = 0.1f;
-	float CurrentDispersionReduction = 0.1f;
-
-	bool DropMagasinFlag = false;
-	float DropMagasinTimer = -1.0f;
-
-	bool DropShellBulletsFlag = false;
-	float DropShellBulletsTimer = -1.0f;
-
-	UPROPERTY(Replicated)
-	FVector ShootEndLocation = FVector(0);
-
 	UFUNCTION(BlueprintCallable)
 		int32 GetWeaponRound();
+
 	UFUNCTION()
 	void InitReload();
 	void FinishReload();
@@ -139,4 +145,5 @@ public:
 	
 	UFUNCTION(NetMulticast, Unreliable)
 		void FXWeaponFire_Multicast(UParticleSystem* FXFire, USoundBase* SoundFire);
+
 };

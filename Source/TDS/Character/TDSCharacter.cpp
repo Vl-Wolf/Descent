@@ -228,9 +228,9 @@ void ATDSCharacter::MovementTick(float DeltaTime)
 			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), AxisX);
 			AddMovementInput(FVector(0.0f, 1.0f, 0.0f), AxisY);
 
-			FString SEnum = UEnum::GetValueAsString(GetMovementState());
+			/*FString SEnum = UEnum::GetValueAsString(GetMovementState());
 
-			UE_LOG(LogTDS_Net, Warning, TEXT("Movement state - %s"), *SEnum);  
+			UE_LOG(LogTDS_Net, Warning, TEXT("Movement state - %s"), *SEnum); */ 
 
 			if (MovementState == EMovementState::Sprint_State)
 			{
@@ -238,7 +238,6 @@ void ATDSCharacter::MovementTick(float DeltaTime)
 				FRotator myRotator = myRotationVector.ToOrientationRotator();
 
 				SetActorRotation(FQuat(myRotator));
-
 				SetActorRotationByYaw_OnServer(myRotator.Yaw);
 			}
 			else
@@ -249,6 +248,7 @@ void ATDSCharacter::MovementTick(float DeltaTime)
 					FHitResult ResultHit;
 					myController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
 					float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
+
 					SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
 					SetActorRotationByYaw_OnServer(FindRotatorResultYaw);
 
@@ -313,7 +313,6 @@ bool ATDSCharacter::GetIsAlive()
 	if (HealthComponent)
 	{
 		result = HealthComponent->GetIsAlive();
-
 	}
 	return result;
 }
@@ -447,6 +446,8 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 					FAttachmentTransformRules Rule(EAttachmentRule::SnapToTarget, false);
 					myWeapon->AttachToComponent(GetMesh(), Rule, FName("WeaponSocketRightHand"));
 					CurrentWeapon = myWeapon;
+
+					myWeapon->IdWeaponName = IdWeaponName;
 					myWeapon->WeaponSetting = myWeaponInfo;
 
 					myWeapon->ReloadTimeDebug = myWeaponInfo.ReloadTime;
@@ -458,6 +459,7 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 					myWeapon->OnWeaponReloadStart.AddDynamic(this, &ATDSCharacter::WeaponReloadStart);
 					myWeapon->OnWeaponReloadEnd.AddDynamic(this, &ATDSCharacter::WeaponReloadEnd);
 					myWeapon->OnWeaponFire.AddDynamic(this, &ATDSCharacter::WeaponFire);
+
 
 					if (CurrentWeapon->GetWeaponRound() <= 0 && CurrentWeapon->CheckCanWeaponReload())
 					{
@@ -505,7 +507,7 @@ void ATDSCharacter::WeaponReloadEnd(bool bIsSuccess, int32 AmmoTake)
 
 void ATDSCharacter::TrySwitchWeaponToIndexByKeyInput_OnServer_Implementation(int32 ToIndex)
 {
-	bool bIsSucces = true;
+	bool bIsSucces = false;
 	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.IsValidIndex(ToIndex))
 	{
 		if (CurrentIndexWeapon != ToIndex && InventoryComponent)
@@ -670,7 +672,7 @@ void ATDSCharacter::AddEffect_Implementation(UTDS_StateEffect* newEffect)
 
 void ATDSCharacter::TryReloadWeapon_OnServer_Implementation()
 {
-	if (CurrentWeapon->GetWeaponRound() <= CurrentWeapon->WeaponSetting.MaxRound && CurrentWeapon->CheckCanWeaponReload())
+	if (CurrentWeapon->GetWeaponRound() < CurrentWeapon->WeaponSetting.MaxRound && CurrentWeapon->CheckCanWeaponReload())
 	{
 		CurrentWeapon->InitReload();
 	}
@@ -734,7 +736,9 @@ void ATDSCharacter::CharacterDead()
 			GetController()->UnPossess();
 		}
 
-		GetWorldTimerManager().SetTimer(TimerHandle_RagDollTimer, this, &ATDSCharacter::EnableRagdoll_Multicast, TimeAnim, false);
+		float DecraeseAnimTimer = FMath::FRandRange(0.2f, 1.0f);
+
+		GetWorldTimerManager().SetTimer(TimerHandle_RagDollTimer, this, &ATDSCharacter::EnableRagdoll_Multicast, TimeAnim - DecraeseAnimTimer, false);
 
 		SetLifeSpan(20.0f);
 		if (GetCurrentWeapon())

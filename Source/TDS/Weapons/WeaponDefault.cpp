@@ -160,7 +160,7 @@ void AWeaponDefault::WeaponInit()
 	}
 	if (StaticMeshWeapon && !StaticMeshWeapon->GetStaticMesh())
 	{
-		StaticMeshWeapon->DestroyComponent(true);
+		StaticMeshWeapon->DestroyComponent();
 	}
 
 	UpdateStateWeapon_OnServer(EMovementState::Run_State);
@@ -222,8 +222,6 @@ void AWeaponDefault::Fire()
 		}
 	}
 
-	
-
 	FireTimer = WeaponSetting.RateOfFire;
 	AdditionalWeaponInfo.Round = AdditionalWeaponInfo.Round - 1;
 	ChangeDispersionByShoot();
@@ -232,8 +230,6 @@ void AWeaponDefault::Fire()
 
 	FXWeaponFire_Multicast(WeaponSetting.EffectFireWeapon, WeaponSetting.SoundFireWeapon);
 
-	
-	
 	int8 NumberProjectile = GetNumberProjectileByShoot();
 
 	if (ShootLocation)
@@ -248,7 +244,6 @@ void AWeaponDefault::Fire()
 		{
 			EndLocation = GetFireEndLocation();
 			
-
 			if (ProjectileInfo.Projectile)
 			{
 				FVector Dir = EndLocation - SpawnLocation;
@@ -502,7 +497,7 @@ void AWeaponDefault::FinishReload()
 
 	if (NeedToReload > AviableAmmoFromInventory)
 	{
-		AdditionalWeaponInfo.Round = AviableAmmoFromInventory;
+		AdditionalWeaponInfo.Round += AviableAmmoFromInventory;
 		AmmoNeedTakeFromInventory = AviableAmmoFromInventory;
 	}
 	else
