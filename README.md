@@ -1,9 +1,14 @@
-# TDS
+# Descent
 
-Developed with Unreal Engine 4 TDS
+* Genre - Top down shooter
+* Engine - Unreal Engine 4.27.2
 
-This project was created using c++ and blueprints. A standard shooter with a top view. 
-A system of weapons, buffs and debuffs has been implemented, and an inventory system has also been created. 
-AI is written for standard opponents and a boss with features in the form of a turret. There is an interface.  
-At the moment, the game is switching to a multiplayer. The server type is listen. 
-Due to the transition of the game to multiplayer, the logic of movement, weapons and interface will be rewritten.
+## Controls
+
+* WASD - Movement
+* R - Reload weapon
+* 1, 2, 3, 4 - Change weapon
+
+You can play in single and cooperative modes (type server - listen)
+
+### [Demo](https://vladislavvolkov.itch.io/descent)
