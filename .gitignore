@@ -1,9 +1,14 @@
+# Folders
 Binaries
 DerivedDataCache
 Intermediate
 Saved
+Build
 .vscode
 .vs
+.idea
+
+# Files
 *.VC.db
 *.opensdf
 *.opendb
@@ -12,7 +17,4 @@ Saved
 *.suo
 *.xcodeproj
 *.xcworkspace
-/Content/MedievalDungeon
-/Сontent/MS_Blood
-/Сontent/GKnight
-/Сontent/ProIconPack
+*_BuiltData.uasset
