@@ -7,6 +7,7 @@
 
 * WASD - Movement
 * R - Reload weapon
+* Z - Health ability
 * 1, 2, 3, 4 - Change weapon
 
 You can play in single and cooperative modes (type server - listen)
