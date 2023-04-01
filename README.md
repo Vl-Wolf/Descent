@@ -12,4 +12,4 @@
 
 You can play in single and cooperative modes (type server - listen)
 
-### [Demo](https://vladislavvolkov.itch.io/descent)
+### [Demo](https://vl-wolf.itch.io/descent)
