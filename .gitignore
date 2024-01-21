@@ -1,9 +1,13 @@
+#Folders
 Binaries
 DerivedDataCache
 Intermediate
 Saved
 .vscode
 .vs
+.idea
+
+#Files
 *.VC.db
 *.opensdf
 *.opendb
@@ -12,3 +16,4 @@ Saved
 *.suo
 *.xcodeproj
 *.xcworkspace
+*_BuiltData.uasset
