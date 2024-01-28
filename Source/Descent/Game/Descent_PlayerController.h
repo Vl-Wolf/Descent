@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Descent/Character/Descent_Character.h"
 #include "GameFramework/PlayerController.h"
 #include "Descent_PlayerController.generated.h"
 
@@ -12,34 +13,39 @@ class ADescent_PlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
+	
 	ADescent_PlayerController();
 
 protected:
-	/** True if the controlled character should navigate to the mouse cursor. */
-	uint32 bMoveToMouseCursor : 1;
-
-	// Begin PlayerController interface
-	virtual void PlayerTick(float DeltaTime) override;
-	virtual void SetupInputComponent() override;
-	// End PlayerController interface
-
-	/** Resets HMD orientation in VR. */
-	void OnResetVR();
-
-	/** Navigate player to the current mouse cursor location. */
-	//void MoveToMouseCursor();
-
-	/** Navigate player to the current touch location. */
-	//void MoveToTouchLocation(const ETouchIndex::Type FingerIndex, const FVector Location);
 	
-	/** Navigate player to the given world location. */
-	//void SetNewMoveDestination(const FVector DestLocation);
+	virtual void BeginPlay() override;
+	
+	UPROPERTY()
+	ADescent_Character* MyCharacter = nullptr;
+	
+	virtual void SetupInputComponent() override;
 
-	/** Input handlers for SetDestination action. */
-	//void OnSetDestinationPressed();
-	//void OnSetDestinationReleased();
+	void MoveForward(float Value);
+	void MoveRight(float Value);
 
-	virtual void OnUnPossess() override;
+	void InputAttackPressed();
+	void InputAttackReleased();
+	
+	void InputSprintPressed();
+	void InputSprintReleased();
+
+	void InputAimPressed();
+	void InputAimReleased();
+
+	void ReloadWeapon();
+	
+	void ActiveAbility();
+
+	void DropCurrentWeapon();
+
+	template<int32 Id>
+	void TKeyPressed();
 };
+
 
 

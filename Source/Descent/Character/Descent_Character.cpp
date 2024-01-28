@@ -8,14 +8,12 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 #include "Materials/Material.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/World.h"
 #include "Descent/Game/Descent_GameInstance.h"
 #include "Descent/Weapons/Projectiles/ProjectileDefault.h"
-//#include "Descent.h"
 #include "Net/UnrealNetwork.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Engine/ActorChannel.h"
@@ -108,115 +106,6 @@ void ADescent_Character::BeginPlay()
 
 }
 
-void ADescent_Character::SetupPlayerInputComponent(UInputComponent* NewInputComponent)
-{
-	Super::SetupPlayerInputComponent(NewInputComponent);
-
-	NewInputComponent->BindAxis(TEXT("MoveForward"), this, &ADescent_Character::InputAxisX);
-	NewInputComponent->BindAxis(TEXT("MoveRight"), this, &ADescent_Character::InputAxisY);
-
-	NewInputComponent->BindAction(TEXT("ChangeToSprint"), EInputEvent::IE_Pressed, this, &ADescent_Character::InputSprintPressed);
-	NewInputComponent->BindAction(TEXT("ChangeToWalk"), EInputEvent::IE_Pressed, this, &ADescent_Character::InputWalkPressed);
-	NewInputComponent->BindAction(TEXT("AimEvent"), EInputEvent::IE_Pressed, this, &ADescent_Character::InputAimPressed);
-	NewInputComponent->BindAction(TEXT("ChangeToSprint"), EInputEvent::IE_Released, this, &ADescent_Character::InputSprintReleased);
-	NewInputComponent->BindAction(TEXT("ChangeToWalk"), EInputEvent::IE_Released, this, &ADescent_Character::InputWalkReleased);
-	NewInputComponent->BindAction(TEXT("AimEvent"), EInputEvent::IE_Released, this, &ADescent_Character::InputAimReleased);
-
-
-	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Pressed, this, &ADescent_Character::InputAttackPressed);
-	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Released, this, &ADescent_Character::InputAttackReleased);
-	NewInputComponent->BindAction(TEXT("ReloadEvent"), EInputEvent::IE_Released, this, &ADescent_Character::TryReloadWeapon);
-
-	NewInputComponent->BindAction(TEXT("SwitchNextWeapon"), EInputEvent::IE_Pressed, this, &ADescent_Character::TrySwitchNextWeapon);
-	NewInputComponent->BindAction(TEXT("SwitchPreviosWeapon"), EInputEvent::IE_Pressed, this, &ADescent_Character::TrySwitchPreviosWeapon);
-
-	NewInputComponent->BindAction(TEXT("AbilityAction"), EInputEvent::IE_Pressed, this, &ADescent_Character::TryAbilityEnabled);
-
-	NewInputComponent->BindAction(TEXT("DropCurrentWeapon"), EInputEvent::IE_Pressed, this, &ADescent_Character::DropCurrenWeapon);
-
-	TArray<FKey> HotKeys;
-	HotKeys.Add(EKeys::One);
-	HotKeys.Add(EKeys::Two);
-	HotKeys.Add(EKeys::Three);
-	HotKeys.Add(EKeys::Four);
-	HotKeys.Add(EKeys::Five);
-	HotKeys.Add(EKeys::Six);
-	HotKeys.Add(EKeys::Seven);
-	HotKeys.Add(EKeys::Eight);
-	HotKeys.Add(EKeys::Nine);
-	HotKeys.Add(EKeys::Zero);
-
-	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ADescent_Character::TKeyPressed<1>);
-	NewInputComponent->BindKey(HotKeys[2], IE_Pressed, this, &ADescent_Character::TKeyPressed<2>);
-	NewInputComponent->BindKey(HotKeys[3], IE_Pressed, this, &ADescent_Character::TKeyPressed<3>);
-	NewInputComponent->BindKey(HotKeys[4], IE_Pressed, this, &ADescent_Character::TKeyPressed<4>);
-	NewInputComponent->BindKey(HotKeys[5], IE_Pressed, this, &ADescent_Character::TKeyPressed<5>);
-	NewInputComponent->BindKey(HotKeys[6], IE_Pressed, this, &ADescent_Character::TKeyPressed<6>);
-	NewInputComponent->BindKey(HotKeys[7], IE_Pressed, this, &ADescent_Character::TKeyPressed<7>);
-	NewInputComponent->BindKey(HotKeys[8], IE_Pressed, this, &ADescent_Character::TKeyPressed<8>);
-	NewInputComponent->BindKey(HotKeys[9], IE_Pressed, this, &ADescent_Character::TKeyPressed<9>);
-	NewInputComponent->BindKey(HotKeys[0], IE_Pressed, this, &ADescent_Character::TKeyPressed<0>);
-}
-
-void ADescent_Character::InputAxisX(float Value)
-{
-	AxisX = Value;
-}
-
-void ADescent_Character::InputAxisY(float Value)
-{
-	AxisY = Value;
-}
-
-void ADescent_Character::InputAttackPressed()
-{
-	if (HealthComponent && HealthComponent->GetIsAlive())
-	{
-		AttackCharEvent(true);
-	}
-	
-}
-
-void ADescent_Character::InputAttackReleased()
-{
-	AttackCharEvent(false);
-}
-
-void ADescent_Character::InputWalkPressed()
-{
-	WalkEnabled = true;
-	ChangeMovementState();
-}
-
-void ADescent_Character::InputWalkReleased()
-{
-	WalkEnabled = false;
-	ChangeMovementState();
-}
-
-void ADescent_Character::InputSprintPressed()
-{
-	SprintRunEnabled = true;
-	ChangeMovementState();
-}
-
-void ADescent_Character::InputSprintReleased()
-{
-	SprintRunEnabled = false;
-	ChangeMovementState();
-}
-
-void ADescent_Character::InputAimPressed()
-{
-	AimEnabled = true;
-	ChangeMovementState();
-}
-
-void ADescent_Character::InputAimReleased()
-{
-	AimEnabled = false;
-	ChangeMovementState();
-}
 
 void ADescent_Character::MovementTick(float DeltaTime)
 {
@@ -483,10 +372,7 @@ void ADescent_Character::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo We
 
 void ADescent_Character::TryReloadWeapon()
 {
-	if (HealthComponent && HealthComponent->GetIsAlive() && CurrentWeapon && !CurrentWeapon->WeaponReloading)
-	{
-		TryReloadWeapon_OnServer();
-	}
+	TryReloadWeapon_OnServer();
 }
 
 void ADescent_Character::WeaponReloadStart(UAnimMontage* Anim)
@@ -529,7 +415,7 @@ void ADescent_Character::TrySwitchWeaponToIndexByKeyInput_OnServer_Implementatio
 	}
 }
 
-void ADescent_Character::DropCurrenWeapon()
+void ADescent_Character::DropCurrentWeapon()
 {
 	if (InventoryComponent)
 	{
@@ -567,54 +453,6 @@ UDecalComponent* ADescent_Character::GetCursorToWorld()
 	return CurrentCursor;
 }
 
-
-void ADescent_Character::TrySwitchNextWeapon()
-{
-	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.Num() > 1)
-	{
-		int8 OldIndex = CurrentIndexWeapon;
-		FAdditionalWeaponInfo OldInfo;
-		if(CurrentWeapon)
-		{
-			OldInfo = CurrentWeapon->AdditionalWeaponInfo;
-			if (CurrentWeapon->WeaponReloading)
-			{
-				CurrentWeapon->CancelReload();
-			}
-		}
-		if (InventoryComponent)
-		{
-			if (InventoryComponent->SwitchWeaponToIndexByNextPreviosIndex(CurrentIndexWeapon + 1, OldIndex, OldInfo, true))
-			{
-
-			}
-		}
-	}
-}
-
-void ADescent_Character::TrySwitchPreviosWeapon()
-{
-	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.Num() > 1)
-	{
-		int8 OldIndex = CurrentIndexWeapon;
-		FAdditionalWeaponInfo OldInfo;
-		if (CurrentWeapon)
-		{
-			OldInfo = CurrentWeapon->AdditionalWeaponInfo;
-			if (CurrentWeapon->WeaponReloading)
-			{
-				CurrentWeapon->CancelReload();
-			}
-		}
-		if (InventoryComponent)
-		{
-			if (InventoryComponent->SwitchWeaponToIndexByNextPreviosIndex(CurrentIndexWeapon - 1, OldIndex, OldInfo, false))
-			{
-
-			}
-		}
-	}
-}
 
 void ADescent_Character::TryAbilityEnabled()
 {

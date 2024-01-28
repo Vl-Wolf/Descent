@@ -23,38 +23,10 @@ protected:
 
 	virtual void BeginPlay() override;
 
-
-	//Inputs Start
-	void InputAxisX(float Value);
-	void InputAxisY(float Value);
+public:
 	
-	void InputAttackPressed();
-	void InputAttackReleased();
-
-	void InputWalkPressed();
-	void InputWalkReleased();
-
-	void InputSprintPressed();
-	void InputSprintReleased();
-
-	void InputAimPressed();
-	void InputAimReleased();
-
-	//Inventory Inputs
-	void TrySwitchNextWeapon();
-	void TrySwitchPreviosWeapon();
-
-	//Ability Inputs
 	void TryAbilityEnabled();
 
-	template<int32 Id>
-	void TKeyPressed()
-	{
-		TrySwitchWeaponToIndexByKeyInput_OnServer(Id);
-	}
-	//Inputs End
-
-	//Inputs Flags
 	float AxisX = 0.0f;
 	float AxisY = 0.0f;
 
@@ -63,21 +35,24 @@ protected:
 	bool AimEnabled = false;
 
 	UPROPERTY(Replicated)
-	EMovementState MovementState = EMovementState::Run_State;
-	UPROPERTY(Replicated)
 	AWeaponDefault* CurrentWeapon = nullptr;
-
+	
+protected:
+	
+	UPROPERTY(Replicated)
+	EMovementState MovementState = EMovementState::Run_State;
+	
 	UDecalComponent* CurrentCursor = nullptr;
 
 	UPROPERTY(Replicated)
-		TArray<UDescent_StateEffect*> Effects;
+	TArray<UDescent_StateEffect*> Effects;
 	UPROPERTY(ReplicatedUsing = EffectAdd_OnRep)
-		UDescent_StateEffect* EffectAdd = nullptr;
+	UDescent_StateEffect* EffectAdd = nullptr;
 	UPROPERTY(ReplicatedUsing = EffectRemove_OnRep)
-		UDescent_StateEffect* EffectRemove = nullptr;
+	UDescent_StateEffect* EffectRemove = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		TArray<UParticleSystemComponent*> ParticleSystemEffects;
+	TArray<UParticleSystemComponent*> ParticleSystemEffects;
 
 	UPROPERTY(Replicated)
 	int32 CurrentIndexWeapon = 0;
@@ -95,49 +70,47 @@ public:
 
 	// Called every frame.
 	virtual void Tick(float DeltaSeconds) override;
-
-	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
-
+	
 	/** Returns TopDownCameraComponent subobject **/
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
 	/** Returns CameraBoom subobject **/
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
-		class UDescent_InventoryComponent* InventoryComponent;
+	UDescent_InventoryComponent* InventoryComponent;
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
-		class UDescent_CharacterHealthComponent* HealthComponent;
+	UDescent_CharacterHealthComponent* HealthComponent;
 
 	//Cursor material on decal
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
-		UMaterialInterface* CursorMaterial = nullptr;
+	UMaterialInterface* CursorMaterial = nullptr;
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
-		FVector CursorSize = FVector(20.0f, 40.0f, 40.0f);
+	FVector CursorSize = FVector(20.0f, 40.0f, 40.0f);
 	//Default move rule and state charecter
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		FCharacterSpeed MovementInfo;
+	FCharacterSpeed MovementInfo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Death")
-		TArray<UAnimMontage*> DeadsAnim;
+	TArray<UAnimMontage*> DeadsAnim;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-		TSubclassOf<UDescent_StateEffect> AbilityEffect;
+	TSubclassOf<UDescent_StateEffect> AbilityEffect;
 
 private:
 
 	/** Top down camera */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class UCameraComponent* TopDownCameraComponent;
+	UCameraComponent* TopDownCameraComponent;
 
 	/** Camera boom positioning the camera above the character */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = Camera, meta = (AllowPrivateAccess = "true"))
-	class USpringArmComponent* CameraBoom;
+	USpringArmComponent* CameraBoom;
 
 public:
 
 	//Tick func Start
 	UFUNCTION()
-		void MovementTick(float DeltaTime);
+	void MovementTick(float DeltaTime);
 	//Tick func End
 
 	//Func
@@ -148,78 +121,76 @@ public:
 
 		
 	UFUNCTION()
-		void InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon);
+	void InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon);
 	void TryReloadWeapon();
 
 	UFUNCTION()
-		void WeaponFire(UAnimMontage* Anim);
+	void WeaponFire(UAnimMontage* Anim);
 	UFUNCTION()
-		void WeaponReloadStart(UAnimMontage* Anim);
+	void WeaponReloadStart(UAnimMontage* Anim);
 	UFUNCTION()
-		void WeaponReloadEnd(bool bIsSuccess, int32 AmmoSafe);
+	void WeaponReloadEnd(bool bIsSuccess, int32 AmmoSafe);
 	//
 	UFUNCTION(Server, Reliable)
-		void TrySwitchWeaponToIndexByKeyInput_OnServer(int32 ToIndex);
-	void DropCurrenWeapon();
+	void TrySwitchWeaponToIndexByKeyInput_OnServer(int32 ToIndex);
+	void DropCurrentWeapon();
 
 	UFUNCTION(BlueprintNativeEvent)
-		void WeaponReloadStart_BP(UAnimMontage* Anim);
+	void WeaponReloadStart_BP(UAnimMontage* Anim);
 	UFUNCTION(BlueprintNativeEvent)
-		void WeaponReloadEnd_BP(bool bIsSuccess);
+	void WeaponReloadEnd_BP(bool bIsSuccess);
 	UFUNCTION(BlueprintNativeEvent)
-		void WeaponFire_BP(UAnimMontage* Anim);
+	void WeaponFire_BP(UAnimMontage* Anim);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		AWeaponDefault* GetCurrentWeapon();
+	AWeaponDefault* GetCurrentWeapon();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		UDecalComponent* GetCursorToWorld();
+	UDecalComponent* GetCursorToWorld();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		EMovementState GetMovementState();
+	EMovementState GetMovementState();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		TArray<UDescent_StateEffect*> GetCurrentEffectsOnChar();
+	TArray<UDescent_StateEffect*> GetCurrentEffectsOnChar();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		int32 GetCurrentWeaponIndex();
+	int32 GetCurrentWeaponIndex();
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		bool GetIsAlive();
-
-	/*UFUNCTION(BlueprintCallable, BlueprintPure)
-		void RemoveCurrentWeapon();*/
+	bool GetIsAlive();
+	
 	//Func End
 	
 	//Interface
 	EPhysicalSurface GetSurfaceType() override;
 	TArray<UDescent_StateEffect*> GetAllCurrentEffects() override;
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-		void RemoveEffect(UDescent_StateEffect* RemoveEffect);
+	void RemoveEffect(UDescent_StateEffect* RemoveEffect);
 	void RemoveEffect_Implementation(UDescent_StateEffect* RemoveEffect) override;
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-		void AddEffect(UDescent_StateEffect* newEffect);
+	void AddEffect(UDescent_StateEffect* newEffect);
 	void AddEffect_Implementation(UDescent_StateEffect* newEffect) override;
 	//Interface End
 
 	UFUNCTION(BlueprintNativeEvent)
-		void CharacterDead_BP();
+	void CharacterDead_BP();
 
 	UFUNCTION(Server, Unreliable)
-		void SetActorRotationByYaw_OnServer(float Yaw);
+	void SetActorRotationByYaw_OnServer(float Yaw);
 	UFUNCTION(NetMulticast, Unreliable)
-		void SetActorRotationByYaw_Multicast(float Yaw);
+	void SetActorRotationByYaw_Multicast(float Yaw);
 
 	UFUNCTION(Server, Reliable)
-		void SetMovementState_OnServer(EMovementState NewState);
+	void SetMovementState_OnServer(EMovementState NewState);
 	UFUNCTION(NetMulticast, Reliable)
-		void SetMovementState_Multicast(EMovementState NewState);
+	void SetMovementState_Multicast(EMovementState NewState);
 	UFUNCTION(Server, Reliable)
-		void TryReloadWeapon_OnServer();
+	void TryReloadWeapon_OnServer();
 	UFUNCTION(NetMulticast, Reliable)
-		void PlayAnim_Multicast(UAnimMontage* Anim);
+	void PlayAnim_Multicast(UAnimMontage* Anim);
 
 	UFUNCTION()
-		void EffectAdd_OnRep();
+	void EffectAdd_OnRep();
 	UFUNCTION()
-		void EffectRemove_OnRep();
+	void EffectRemove_OnRep();
 
 	UFUNCTION()
-		void SwitchEffect(UDescent_StateEffect* Effect, bool bIsAdd);
+	void SwitchEffect(UDescent_StateEffect* Effect, bool bIsAdd);
 };
 

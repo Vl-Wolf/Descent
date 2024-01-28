@@ -1,117 +1,127 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Descent_PlayerController.h"
-#include "Blueprint/AIBlueprintHelperLibrary.h"
-#include "Runtime/Engine/Classes/Components/DecalComponent.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 #include "Descent/Character/Descent_Character.h"
 #include "Engine/World.h"
 
 ADescent_PlayerController::ADescent_PlayerController()
 {
-	bShowMouseCursor = true;
+	bShowMouseCursor = false;
+	bEnableTouchEvents = false;
 	DefaultMouseCursor = EMouseCursor::Crosshairs;
 }
 
-void ADescent_PlayerController::PlayerTick(float DeltaTime)
+void ADescent_PlayerController::BeginPlay()
 {
-	Super::PlayerTick(DeltaTime);
-
-	// keep updating the destination every tick while desired
-	/*if (bMoveToMouseCursor)
-	{
-		MoveToMouseCursor();
-	}*/
+	Super::BeginPlay();
+	
+	MyCharacter = Cast<ADescent_Character>(GetPawn());
 }
+
 
 void ADescent_PlayerController::SetupInputComponent()
 {
 	// set up gameplay key bindings
 	Super::SetupInputComponent();
 
-	//InputComponent->BindAction("SetDestination", IE_Pressed, this, &ADescent_PlayerController::OnSetDestinationPressed);
-	//InputComponent->BindAction("SetDestination", IE_Released, this, &ADescent_PlayerController::OnSetDestinationReleased);
+	InputComponent->BindAxis("MoveForward", this, &ADescent_PlayerController::MoveForward);
+	InputComponent->BindAxis("MoveRight", this, &ADescent_PlayerController::MoveRight);
+	
+	InputComponent->BindAction("ChangeToSprint", IE_Pressed, this, &ADescent_PlayerController::InputSprintPressed);
+	InputComponent->BindAction("ChangeToSprint", IE_Released, this, &ADescent_PlayerController::InputSprintReleased);
 
-	// support touch devices 
-	//InputComponent->BindTouch(EInputEvent::IE_Pressed, this, &ADescent_PlayerController::MoveToTouchLocation);
-	//InputComponent->BindTouch(EInputEvent::IE_Repeat, this, &ADescent_PlayerController::MoveToTouchLocation);
+	InputComponent->BindAction("AimEvent", IE_Pressed, this, &ADescent_PlayerController::InputAimPressed);
+	InputComponent->BindAction("AimEvent", IE_Released, this, &ADescent_PlayerController::InputAimReleased);
 
-	//InputComponent->BindAction("ResetVR", IE_Pressed, this, &ADescent_PlayerController::OnResetVR);
+	InputComponent->BindAction("FireEvent", IE_Pressed, this, &ADescent_PlayerController::InputAttackPressed);
+	InputComponent->BindAction("FireEvent", IE_Released, this, &ADescent_PlayerController::InputAttackReleased);
+
+	InputComponent->BindAction("ReloadEvent", IE_Released, this, &ADescent_PlayerController::ReloadWeapon);
+
+	InputComponent->BindAction("AbilityAction", IE_Pressed, this, &ADescent_PlayerController::ActiveAbility);
+
+	InputComponent->BindAction("DropCurrentWeapon", IE_Pressed, this, &ADescent_PlayerController::DropCurrentWeapon);
+
+	TArray<FKey> HotKeys;
+	HotKeys.Add(EKeys::One);
+	HotKeys.Add(EKeys::Two);
+	HotKeys.Add(EKeys::Three);
+	HotKeys.Add(EKeys::Four);
+	InputComponent->BindKey(HotKeys[0], IE_Pressed, this, &ADescent_PlayerController::TKeyPressed<0>);
+	InputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ADescent_PlayerController::TKeyPressed<1>);
+	InputComponent->BindKey(HotKeys[2], IE_Pressed, this, &ADescent_PlayerController::TKeyPressed<2>);
+	InputComponent->BindKey(HotKeys[3], IE_Pressed, this, &ADescent_PlayerController::TKeyPressed<3>);
+	
 }
 
-void ADescent_PlayerController::OnResetVR()
+void ADescent_PlayerController::MoveForward(float Value)
 {
-	UHeadMountedDisplayFunctionLibrary::ResetOrientationAndPosition();
+	MyCharacter->AxisX = Value;
 }
 
-void ADescent_PlayerController::OnUnPossess()
+void ADescent_PlayerController::MoveRight(float Value)
 {
-	Super::OnUnPossess();
+	MyCharacter->AxisY = Value;
 }
 
-//void ADescent_PlayerController::MoveToMouseCursor()
-//{
-//	if (UHeadMountedDisplayFunctionLibrary::IsHeadMountedDisplayEnabled())
-//	{
-//		if (ATDSCharacter* MyPawn = Cast<ATDSCharacter>(GetPawn()))
-//		{
-//			if (MyPawn->GetCursorToWorld())
-//			{
-//				UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, MyPawn->GetCursorToWorld()->GetComponentLocation());
-//			}
-//		}
-//	}
-//	else
-//	{
-//		// Trace to see what is under the mouse cursor
-//		FHitResult Hit;
-//		GetHitResultUnderCursor(ECC_Visibility, false, Hit);
-//
-//		if (Hit.bBlockingHit)
-//		{
-//			// We hit something, move there
-//			SetNewMoveDestination(Hit.ImpactPoint);
-//		}
-//	}
-//}
+void ADescent_PlayerController::InputAttackPressed()
+{
+	if (MyCharacter->HealthComponent && MyCharacter->HealthComponent->GetIsAlive())
+	{
+		MyCharacter->AttackCharEvent(true);
+	}
+}
 
-//void ADescent_PlayerController::MoveToTouchLocation(const ETouchIndex::Type FingerIndex, const FVector Location)
-//{
-//	FVector2D ScreenSpaceLocation(Location);
-//
-//	// Trace to see what is under the touch location
-//	FHitResult HitResult;
-//	GetHitResultAtScreenPosition(ScreenSpaceLocation, CurrentClickTraceChannel, true, HitResult);
-//	if (HitResult.bBlockingHit)
-//	{
-//		// We hit something, move there
-//		SetNewMoveDestination(HitResult.ImpactPoint);
-//	}
-//}
+void ADescent_PlayerController::InputAttackReleased()
+{
+	MyCharacter->AttackCharEvent(false);
+}
 
-//void ADescent_PlayerController::SetNewMoveDestination(const FVector DestLocation)
-//{
-//	APawn* const MyPawn = GetPawn();
-//	if (MyPawn)
-//	{
-//		float const Distance = FVector::Dist(DestLocation, MyPawn->GetActorLocation());
-//
-//		// We need to issue move command only if far enough in order for walk animation to play correctly
-//		if ((Distance > 120.0f))
-//		{
-//			UAIBlueprintHelperLibrary::SimpleMoveToLocation(this, DestLocation);
-//		}
-//	}
-//}
+void ADescent_PlayerController::InputSprintPressed()
+{
+	MyCharacter->SprintRunEnabled = true;
+	MyCharacter->ChangeMovementState();
+}
 
-//void ADescent_PlayerController::OnSetDestinationPressed()
-//{
-//	// set flag to keep updating destination until released
-//	bMoveToMouseCursor = true;
-//}
+void ADescent_PlayerController::InputSprintReleased()
+{
+	MyCharacter->SprintRunEnabled = false;
+	MyCharacter->ChangeMovementState();
+}
 
-//void ADescent_PlayerController::OnSetDestinationReleased()
-//{
-//	// clear flag to indicate we should stop updating the destination
-//	bMoveToMouseCursor = false;
-//}
+void ADescent_PlayerController::InputAimPressed()
+{
+	MyCharacter->AimEnabled = true;
+	MyCharacter->ChangeMovementState();
+}
+
+void ADescent_PlayerController::InputAimReleased()
+{
+	MyCharacter->AimEnabled = false;
+	MyCharacter->ChangeMovementState();
+}
+
+void ADescent_PlayerController::ReloadWeapon()
+{
+	if (MyCharacter->HealthComponent && MyCharacter->HealthComponent->GetIsAlive() && MyCharacter->CurrentWeapon && !MyCharacter->CurrentWeapon->WeaponReloading)
+	{
+		MyCharacter->TryReloadWeapon();
+	}
+}
+
+void ADescent_PlayerController::ActiveAbility()
+{
+	MyCharacter->TryAbilityEnabled();
+}
+
+void ADescent_PlayerController::DropCurrentWeapon()
+{
+	MyCharacter->DropCurrentWeapon();
+}
+
+template <int32 Id>
+void ADescent_PlayerController::TKeyPressed()
+{
+	MyCharacter->TrySwitchWeaponToIndexByKeyInput_OnServer(Id);
+}
+
