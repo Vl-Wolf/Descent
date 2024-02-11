@@ -26,6 +26,8 @@ void ADescent_PlayerController::SetupInputComponent()
 
 	InputComponent->BindAxis("MoveForward", this, &ADescent_PlayerController::MoveForward);
 	InputComponent->BindAxis("MoveRight", this, &ADescent_PlayerController::MoveRight);
+	InputComponent->BindAxis("Turn", this, &ADescent_PlayerController::Turn);
+	InputComponent->BindAxis("LookUp", this, &ADescent_PlayerController::LookUp);
 	
 	InputComponent->BindAction("ChangeToSprint", IE_Pressed, this, &ADescent_PlayerController::InputSprintPressed);
 	InputComponent->BindAction("ChangeToSprint", IE_Released, this, &ADescent_PlayerController::InputSprintReleased);
@@ -62,6 +64,16 @@ void ADescent_PlayerController::MoveForward(float Value)
 void ADescent_PlayerController::MoveRight(float Value)
 {
 	MyCharacter->AxisY = Value;
+}
+
+void ADescent_PlayerController::Turn(float Value)
+{
+	AddYawInput(Value);
+}
+
+void ADescent_PlayerController::LookUp(float Value)
+{
+	AddPitchInput(Value);
 }
 
 void ADescent_PlayerController::InputAttackPressed()

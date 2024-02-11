@@ -13,6 +13,7 @@
 #include "Kismet/KismetMathLibrary.h"
 #include "Engine/World.h"
 #include "Descent/Game/Descent_GameInstance.h"
+#include "Descent/Game/Descent_PlayerController.h"
 #include "Descent/Weapons/Projectiles/ProjectileDefault.h"
 #include "Net/UnrealNetwork.h"
 #include "Particles/ParticleSystemComponent.h"
@@ -39,9 +40,9 @@ ADescent_Character::ADescent_Character()
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(RootComponent);
 	CameraBoom->SetUsingAbsoluteRotation(true); // Don't want arm to rotate when character does
-	CameraBoom->TargetArmLength = 800.f;
-	CameraBoom->SetRelativeRotation(FRotator(-60.f, 0.f, 0.f));
-	CameraBoom->bDoCollisionTest = false; // Don't want to pull camera in when it collides with level
+	//CameraBoom->TargetArmLength = 300.f;
+	//CameraBoom->SetRelativeRotation(FRotator(0.0f, 0.0f, 0.0f));
+	CameraBoom->bDoCollisionTest = true; // Don't want to pull camera in when it collides with level
 
 	// Create a camera...
 	TopDownCameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("TopDownCamera"));
@@ -76,16 +77,18 @@ void ADescent_Character::Tick(float DeltaSeconds)
 
 	if (CurrentCursor)
 	{
-		APlayerController* myPC = Cast<APlayerController>(GetController());
+		ADescent_PlayerController* myPC = Cast<ADescent_PlayerController>(GetController());
 		if (myPC && myPC->IsLocalPlayerController())
 		{
-			FHitResult TraceHitResult;
+			/*FHitResult TraceHitResult;
 			myPC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
 			FVector CursorFV = TraceHitResult.ImpactNormal;
 			FRotator CursorR = CursorFV.Rotation();
 
 			CurrentCursor->SetWorldLocation(TraceHitResult.Location);
-			CurrentCursor->SetWorldRotation(CursorR);
+			CurrentCursor->SetWorldRotation(CursorR);*/
+
+			//CurrentCursor->SetWorldLocation(FVector(GetActorForwardVector().X * 100.0f, 0.0f, -90.0f), false, nullptr, ETeleportType::None);
 		}
 	}
 
@@ -131,15 +134,15 @@ void ADescent_Character::MovementTick(float DeltaTime)
 			}
 			else
 			{
-				APlayerController* myController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
+				ADescent_PlayerController* myController = Cast<ADescent_PlayerController>(GetController());
 				if (myController)
 				{
 					FHitResult ResultHit;
 					myController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
-					float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
+					/*float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
 
 					SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
-					SetActorRotationByYaw_OnServer(FindRotatorResultYaw);
+					SetActorRotationByYaw_OnServer(FindRotatorResultYaw);*/
 
 					if (CurrentWeapon)
 					{
