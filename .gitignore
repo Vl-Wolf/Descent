@@ -7,6 +7,10 @@ Build
 .vscode
 .vs
 .idea
+Content/GKnight
+Content/MedievalDungeon
+Content/ProIconPack
+Content/MilitaryWeapDark
 
 # Files
 *.VC.db
