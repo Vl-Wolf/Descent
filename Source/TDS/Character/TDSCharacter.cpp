@@ -97,11 +97,11 @@ void ATDSCharacter::Tick(float DeltaSeconds)
 void ATDSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
+	
 	if (GetWorld() && GetWorld()->GetNetMode() != NM_DedicatedServer)
 	{
-		if (CursorMaterial && GetLocalRole() == ROLE_AutonomousProxy || GetLocalRole() == ROLE_Authority)
-		{
+		if (CursorMaterial && IsLocallyControlled())
+		{			
 			CurrentCursor = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), CursorMaterial, CursorSize, FVector(0));
 		}
 	}
