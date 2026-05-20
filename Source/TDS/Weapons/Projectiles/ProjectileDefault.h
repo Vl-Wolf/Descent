@@ -20,13 +20,16 @@ public:
 	AProjectileDefault();
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
-		class UStaticMeshComponent* BulletMesh = nullptr;
+	class UStaticMeshComponent* BulletMesh = nullptr;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
-		class USphereComponent* BulletCollisionSphere = nullptr;
+	class USphereComponent* BulletCollisionSphere = nullptr;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
-		class UProjectileMovementComponent* BulletProjectileMovement = nullptr;
+	class UProjectileMovementComponent* BulletProjectileMovement = nullptr;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
-		class UParticleSystemComponent* BulletFX = nullptr;
+	class UParticleSystemComponent* BulletFX = nullptr;
 
 	FProjectileInfo ProjectileSetting;
 
@@ -39,28 +42,37 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(BlueprintCallable)
-		void InitProjectile(FProjectileInfo InitParam);
+	void InitProjectile(FProjectileInfo InitParam);
+	
 	UFUNCTION()
-		virtual	void BulletCollisionSphereHit(class UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	virtual	void BulletCollisionSphereHit(class UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit);
+	
 	UFUNCTION()
-		void BulletCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFroomSweep, const FHitResult& SweepResult);
+	void BulletCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult);
+	
 	UFUNCTION()
-		void BulletCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	void BulletCollisionSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex);
+	
 	UFUNCTION()
-		virtual void ImpactProjectile();
+	virtual void ImpactProjectile();
 
 	UFUNCTION(NetMulticast, Reliable)
-		void InitVisualMeshProjectile_Multicast(UStaticMesh* newMesh, FTransform MeshRelative);
+	void InitVisualMeshProjectile_Multicast(UStaticMesh* NewMesh, FTransform MeshRelative);
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void InitVisualTrailProjectile_Multicast(UParticleSystem* newTrail, FTransform TrailRelative);
+	void InitVisualTrailProjectile_Multicast(UParticleSystem* NewTrail, FTransform TrailRelative);
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void SpawnHitDecal_Multicast(UMaterialInterface* DecalMaterial, UPrimitiveComponent* OtherComponet, FHitResult HitResult);
+	void SpawnHitDecal_Multicast(UMaterialInterface* DecalMaterial, UPrimitiveComponent* OtherComponent, FHitResult HitResult);
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void SpawnHitFX_Multicast(UParticleSystem* FXTemplate, FHitResult HitResult);
+	void SpawnHitFX_Multicast(UParticleSystem* FXTemplate, FHitResult HitResult);
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void SpawnHitSound_Multicast(USoundBase* HitSound, FHitResult HitResult);
+	void SpawnHitSound_Multicast(USoundBase* HitSound, FHitResult HitResult);
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void InitVelocity_Multicast(float InitSpeed, float MaxSpeed);
+	void InitVelocity_Multicast(float InitSpeed, float MaxSpeed);
 
 	virtual void PostNetReceiveVelocity(const FVector& NewVelocity) override;
 

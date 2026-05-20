@@ -8,10 +8,10 @@
 #include "TDSInventoryComponent.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FOnSwitchWeapon, FName, WeaponIdName, FAdditionalWeaponInfo, WeaponAdditionalInfo, int32, NewCurrentIndexWeapon);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoChange, EWeaponType, TypeAmmo, int32, Cout);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnAmmoChange, EWeaponType, TypeAmmo, int32, Count);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnWeaponAdditionalInfoChange, int32, IndexSlot, FAdditionalWeaponInfo, AdditionalInfo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAmmoEmpty, EWeaponType, WeaponType);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAmmoAviable, EWeaponType, WeaponType);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponAmmoAvailable, EWeaponType, WeaponType);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnUpdateWeaponSlots, int32, IndexSlotChange, FWeaponSlot, NewInfo);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponNotHaveRound, int32, IndexSlotWeapon);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnWeaponHaveRound, int32, IndexSlotWeapon);
@@ -38,7 +38,7 @@ public:
 	FOnWeaponAmmoEmpty OnWeaponAmmoEmpty;
 	
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
-	FOnWeaponAmmoAviable OnWeaponAmmoAviable;
+	FOnWeaponAmmoAvailable OnWeaponAmmoAvailable;
 	
 	UPROPERTY(BlueprintAssignable, Category = "Inventory")
 	FOnUpdateWeaponSlots OnUpdateWeaponSlots;
@@ -62,9 +62,9 @@ public:
 	int32 FindFirstAvailableSlotExcluding(int32 ExcludeIndex) const;
 
 	
-	bool SwitchWeaponToIndexByNextPreviosIndex(int32 ChangeToIndex, int32 OldIndex, FAdditionalWeaponInfo OldInfo, bool bIsForward);
+	bool SwitchWeaponToIndexByNextPreviousIndex(int32 ChangeToIndex, int32 OldIndex, FAdditionalWeaponInfo OldInfo, bool bIsForward);
 	
-	bool SwitchWeaponByIndex(int32 IndexWeaponToChange, int32 PreviosIndex, FAdditionalWeaponInfo PreviosWeaponInfo);
+	bool SwitchWeaponByIndex(int32 IndexWeaponToChange, int32 PreviousIndex, FAdditionalWeaponInfo PreviousWeaponInfo);
 
 	void SetAdditionalInfoWeapon(int32 IndexWeapon, FAdditionalWeaponInfo NewInfo);
 	
@@ -79,9 +79,9 @@ public:
 	bool GetWeaponTypeByNameWeapon(FName IdWeaponName, EWeaponType& WeaponType);
 
 	UFUNCTION(BlueprintCallable)
-	void AmmoSlotChangeValue(EWeaponType TypeWeapon, int32 CoutChangeAmmo);
+	void AmmoSlotChangeValue(EWeaponType TypeWeapon, int32 CountChangeAmmo);
 	
-	bool CheckAmmoForWeapon(EWeaponType TypeWeapon, int8& AviableAmmForWeapon);
+	bool CheckAmmoForWeapon(EWeaponType TypeWeapon, int8& AvailableAmmForWeapon);
 
 	//Interface PickUp Actors
 	UFUNCTION(BlueprintCallable, Category = "Interface")
@@ -115,7 +115,7 @@ public:
 	void SwitchWeaponEvent_OnServer(FName WeaponName, FAdditionalWeaponInfo AdditionalInfo, int32 IndexSlot);
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void AmmoChangeEvent_Multicast(EWeaponType TypeWeapon, int32 Cout);
+	void AmmoChangeEvent_Multicast(EWeaponType TypeWeapon, int32 Count);
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void WeaponAdditionalInfoChangeEvent_Multicast(int32 IndexWeapon, FAdditionalWeaponInfo AdditionalWeaponInfo);
@@ -124,7 +124,7 @@ public:
 	void WeaponAmmoEmptyEvent_Multicast(EWeaponType TypeWeapon);
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void WeaponAmmoAviableEvent_Multicast(EWeaponType TypeWeapon);
+	void WeaponAmmoAvailableEvent_Multicast(EWeaponType TypeWeapon);
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void UpdateWeaponSlotsEvent_Multicast(int32 IndexSlotChange, FWeaponSlot NewInfo);

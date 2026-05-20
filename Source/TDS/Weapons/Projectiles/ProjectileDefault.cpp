@@ -23,7 +23,7 @@ AProjectileDefault::AProjectileDefault()
 
 	RootComponent = BulletCollisionSphere;
 
-	BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bullet Projecile Mesh"));
+	BulletMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Bullet Projectile Mesh"));
 	BulletMesh->SetupAttachment(RootComponent);
 	BulletMesh->SetCanEverAffectNavigation(false);
 
@@ -32,8 +32,6 @@ AProjectileDefault::AProjectileDefault()
 
 	BulletProjectileMovement = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("Bullet ProjectileMovement"));
 	BulletProjectileMovement->UpdatedComponent = RootComponent;
-	//BulletProjectileMovement->InitialSpeed = ProjectileSetting.ProjectileInitSpeed;
-	//BulletProjectileMovement->MaxSpeed = ProjectileSetting.ProjectileInitSpeed;
 
 	BulletProjectileMovement->bRotationFollowsVelocity = true;
 	BulletProjectileMovement->bShouldBounce = true;
@@ -59,9 +57,7 @@ void AProjectileDefault::Tick(float DeltaTime)
 
 void AProjectileDefault::InitProjectile(FProjectileInfo InitParam)
 {
-	//BulletProjectileMovement->InitialSpeed = InitParam.ProjectileInitSpeed;
-	//BulletProjectileMovement->MaxSpeed = InitParam.ProjectileMaxSpeed;
-	this->SetLifeSpan(InitParam.ProjectileLifeTime);
+	SetLifeSpan(InitParam.ProjectileLifeTime);
 	
 
 	if (InitParam.ProjectileStaticMesh)
@@ -92,24 +88,24 @@ void AProjectileDefault::BulletCollisionSphereHit(UPrimitiveComponent* HitComp, 
 {
 	if (OtherActor && Hit.PhysMaterial.IsValid())
 	{
-		EPhysicalSurface mySurfaceType = UGameplayStatics::GetSurfaceType(Hit);
+		EPhysicalSurface SurfaceType = UGameplayStatics::GetSurfaceType(Hit);
 
-		if (ProjectileSetting.HitDecals.Contains(mySurfaceType))
+		if (ProjectileSetting.HitDecals.Contains(SurfaceType))
 		{
-			UMaterialInterface* myMaterial = ProjectileSetting.HitDecals[mySurfaceType];
+			UMaterialInterface* Material = ProjectileSetting.HitDecals[SurfaceType];
 
-			if (myMaterial && OtherComp)
+			if (Material && OtherComp)
 			{
-				SpawnHitDecal_Multicast(myMaterial, OtherComp, Hit);
+				SpawnHitDecal_Multicast(Material, OtherComp, Hit);
 			}
 		}
-		if (ProjectileSetting.HitFXs.Contains(mySurfaceType))
+		if (ProjectileSetting.HitFXs.Contains(SurfaceType))
 		{
-			UParticleSystem* myParticle = ProjectileSetting.HitFXs[mySurfaceType];
+			UParticleSystem* Particle = ProjectileSetting.HitFXs[SurfaceType];
 			{
-				if (myParticle)
+				if (Particle)
 				{
-					SpawnHitFX_Multicast(myParticle, Hit);
+					SpawnHitFX_Multicast(Particle, Hit);
 				}
 			}
 		}
@@ -119,14 +115,14 @@ void AProjectileDefault::BulletCollisionSphereHit(UPrimitiveComponent* HitComp, 
 			SpawnHitSound_Multicast(ProjectileSetting.HitSound, Hit);
 		}
 
-		UTypes::AddEffectBySurfaceType(Hit.GetActor(), Hit.BoneName, ProjectileSetting.Effect, mySurfaceType);
+		UTypes::AddEffectBySurfaceType(Hit.GetActor(), Hit.BoneName, ProjectileSetting.Effect, SurfaceType);
 	}
 	UGameplayStatics::ApplyPointDamage(OtherActor, ProjectileSetting.ProjectileDamage, Hit.TraceStart, Hit, GetInstigatorController(), this, NULL);
 	UAISense_Damage::ReportDamageEvent(GetWorld(), Hit.GetActor(), GetInstigator(), ProjectileSetting.ProjectileDamage, Hit.Location, Hit.Location);
 	ImpactProjectile();
 }
 
-void AProjectileDefault::BulletCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFroomSweep, const FHitResult& SweepResult)
+void AProjectileDefault::BulletCollisionSphereBeginOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 }
 
@@ -140,9 +136,9 @@ void AProjectileDefault::ImpactProjectile()
 }
 
 
-void AProjectileDefault::SpawnHitDecal_Multicast_Implementation(UMaterialInterface* DecalMaterial, UPrimitiveComponent* OtherComponet, FHitResult HitResult)
+void AProjectileDefault::SpawnHitDecal_Multicast_Implementation(UMaterialInterface* DecalMaterial, UPrimitiveComponent* OtherComponent, FHitResult HitResult)
 {
-	UGameplayStatics::SpawnDecalAttached(DecalMaterial, FVector(20.0f), OtherComponet, NAME_None, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation(), EAttachLocation::KeepWorldPosition, 10.0f);
+	UGameplayStatics::SpawnDecalAttached(DecalMaterial, FVector(20.0f), OtherComponent, NAME_None, HitResult.ImpactPoint, HitResult.ImpactNormal.Rotation(), EAttachLocation::KeepWorldPosition, 10.0f);
 }
 
 void AProjectileDefault::SpawnHitFX_Multicast_Implementation(UParticleSystem* FXTemplate, FHitResult HitResult)
@@ -156,15 +152,15 @@ void AProjectileDefault::SpawnHitSound_Multicast_Implementation(USoundBase* HitS
 
 }
 
-void AProjectileDefault::InitVisualMeshProjectile_Multicast_Implementation(UStaticMesh* newMesh, FTransform MeshRelative)
+void AProjectileDefault::InitVisualMeshProjectile_Multicast_Implementation(UStaticMesh* NewMesh, FTransform MeshRelative)
 {
-	BulletMesh->SetStaticMesh(newMesh);
+	BulletMesh->SetStaticMesh(NewMesh);
 	BulletMesh->SetRelativeTransform(MeshRelative);
 }
 
-void AProjectileDefault::InitVisualTrailProjectile_Multicast_Implementation(UParticleSystem* newTrail, FTransform TrailRelative)
+void AProjectileDefault::InitVisualTrailProjectile_Multicast_Implementation(UParticleSystem* NewTrail, FTransform TrailRelative)
 {
-	BulletFX->SetTemplate(newTrail);
+	BulletFX->SetTemplate(NewTrail);
 	BulletFX->SetRelativeTransform(TrailRelative);
 	
 }

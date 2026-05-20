@@ -147,14 +147,12 @@ private:
 	class USpringArmComponent* CameraBoom;
 
 public:
-
-	//Tick func Start
+	
 	UFUNCTION()
 	void MovementTick(float DeltaTime);
-	//Tick func End
-
-	//Func
+	
 	void CharacterUpdate();
+	
 	void ChangeMovementState();
 
 	void AttackCharEvent(bool bIsFiring);
@@ -173,7 +171,7 @@ public:
 	
 	UFUNCTION()
 	void WeaponReloadEnd(bool bIsSuccess, int32 AmmoSafe);
-	//
+	
 	UFUNCTION(Server, Reliable)
 	void TrySwitchWeaponToIndexByKeyInput_OnServer(int32 ToIndex);
 	
@@ -205,11 +203,7 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetIsAlive();
-
-	/*UFUNCTION(BlueprintCallable, BlueprintPure)
-		void RemoveCurrentWeapon();*/
-	//Func End
-	
+		
 	//Interface
 	EPhysicalSurface GetSurfaceType() override;
 	

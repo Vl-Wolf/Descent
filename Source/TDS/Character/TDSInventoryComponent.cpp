@@ -28,7 +28,7 @@ int32 UTDSInventoryComponent::FindFirstAvailableSlotExcluding(int32 ExcludeIndex
 	return INDEX_NONE;
 }
 
-bool UTDSInventoryComponent::SwitchWeaponToIndexByNextPreviosIndex(int32 ChangeToIndex, int32 OldIndex, FAdditionalWeaponInfo OldInfo, bool bIsForward)
+bool UTDSInventoryComponent::SwitchWeaponToIndexByNextPreviousIndex(int32 ChangeToIndex, int32 OldIndex, FAdditionalWeaponInfo OldInfo, bool bIsForward)
 {
 	bool bIsSuccess = false;
 	int8 CorrectIndex = ChangeToIndex;
@@ -64,7 +64,7 @@ bool UTDSInventoryComponent::SwitchWeaponToIndexByNextPreviosIndex(int32 ChangeT
 					int8 j = 0;
 					while (j < AmmoSlots.Num() && !bIsFind)
 					{
-						if (AmmoSlots[j].WeaponType == WeaponInfo.WeaponType && AmmoSlots[j].Cout > 0)
+						if (AmmoSlots[j].WeaponType == WeaponInfo.WeaponType && AmmoSlots[j].Count > 0)
 						{
 							bIsSuccess = true;
 							bIsFind = true;
@@ -126,7 +126,7 @@ bool UTDSInventoryComponent::SwitchWeaponToIndexByNextPreviosIndex(int32 ChangeT
 						int8 j = 0;
 						while (j < AmmoSlots.Num() && !bIsFind)
 						{
-							if (AmmoSlots[j].WeaponType == WeaponInfo.WeaponType && AmmoSlots[j].Cout > 0)
+							if (AmmoSlots[j].WeaponType == WeaponInfo.WeaponType && AmmoSlots[j].Count > 0)
 							{
 								//WeaponGood
 								bIsSuccess = true;
@@ -168,7 +168,7 @@ bool UTDSInventoryComponent::SwitchWeaponToIndexByNextPreviosIndex(int32 ChangeT
 								int8 j = 0;
 								while (j < AmmoSlots.Num() && !bIsFind)
 								{
-									if (AmmoSlots[j].WeaponType == Info.WeaponType && AmmoSlots[j].Cout > 0)
+									if (AmmoSlots[j].WeaponType == Info.WeaponType && AmmoSlots[j].Count > 0)
 									{
 										//WeaponGood
 										bIsSuccess = true;
@@ -207,7 +207,7 @@ bool UTDSInventoryComponent::SwitchWeaponToIndexByNextPreviosIndex(int32 ChangeT
 								{
 									if (AmmoSlots[j].WeaponType == WeaponInfo.WeaponType)
 									{
-										if (AmmoSlots[j].Cout > 0)
+										if (AmmoSlots[j].Count > 0)
 										{
 											//WeaponGood, it same weapon do nothing
 										}
@@ -244,7 +244,7 @@ bool UTDSInventoryComponent::SwitchWeaponToIndexByNextPreviosIndex(int32 ChangeT
 	return bIsSuccess;
 }
 
-bool UTDSInventoryComponent::SwitchWeaponByIndex(int32 IndexWeaponToChange, int32 PreviosIndex, FAdditionalWeaponInfo PreviosWeaponInfo)
+bool UTDSInventoryComponent::SwitchWeaponByIndex(int32 IndexWeaponToChange, int32 PreviousIndex, FAdditionalWeaponInfo PreviousWeaponInfo)
 {
 	bool bIsSuccess = false;
 
@@ -253,15 +253,15 @@ bool UTDSInventoryComponent::SwitchWeaponByIndex(int32 IndexWeaponToChange, int3
 
 	if (!ToSwitchIdWeapon.IsNone())
 	{
-		SetAdditionalInfoWeapon(PreviosIndex, PreviosWeaponInfo);
+		SetAdditionalInfoWeapon(PreviousIndex, PreviousWeaponInfo);
 		SwitchWeaponEvent_OnServer(ToSwitchIdWeapon, ToSwitchAdditionalInfo, IndexWeaponToChange);
 
 		//check ammo slot for event to player		
 		EWeaponType ToSwitchWeaponType;
 		if (GetWeaponTypeByNameWeapon(ToSwitchIdWeapon, ToSwitchWeaponType))
 		{
-			int8 AviableAmmoForWeapon = -1;
-			if (CheckAmmoForWeapon(ToSwitchWeaponType, AviableAmmoForWeapon))
+			int8 AvailableAmmoForWeapon = -1;
+			if (CheckAmmoForWeapon(ToSwitchWeaponType, AvailableAmmoForWeapon))
 			{
 
 			}
@@ -299,17 +299,17 @@ int32 UTDSInventoryComponent::GetWeaponIndexSlotByName(FName IdWeaponName)
 	return Result;
 }
 
-FName UTDSInventoryComponent::GetWeaponNameBySlotIndex(int32 indexSlot)
+FName UTDSInventoryComponent::GetWeaponNameBySlotIndex(int32 IndexSlot)
 {
 	FName Result;
 
-	if (WeaponSlots.IsValidIndex(indexSlot))
+	if (WeaponSlots.IsValidIndex(IndexSlot))
 	{
-		Result = WeaponSlots[indexSlot].NameItem;
+		Result = WeaponSlots[IndexSlot].NameItem;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Warning, TEXT("UTDSInventoryComponent::GetWeaponNameBySlotIndex - Not Correct index Weapon  - %d"), indexSlot);
+		UE_LOG(LogTemp, Warning, TEXT("UTDSInventoryComponent::GetWeaponNameBySlotIndex - Not Correct index Weapon  - %d"), IndexSlot);
 	}
 	return Result;
 }
@@ -360,7 +360,7 @@ void UTDSInventoryComponent::SetAdditionalInfoWeapon(int32 IndexWeapon, FAdditio
 
 }
 
-void UTDSInventoryComponent::AmmoSlotChangeValue(EWeaponType TypeWeapon, int32 CoutChangeAmmo)
+void UTDSInventoryComponent::AmmoSlotChangeValue(EWeaponType TypeWeapon, int32 CountChangeAmmo)
 {
 	bool bIsFind = false;
 	int8 i = 0;
@@ -368,11 +368,11 @@ void UTDSInventoryComponent::AmmoSlotChangeValue(EWeaponType TypeWeapon, int32 C
 	{
 		if (AmmoSlots[i].WeaponType == TypeWeapon)
 		{
-			AmmoSlots[i].Cout += CoutChangeAmmo;
-			if (AmmoSlots[i].Cout > AmmoSlots[i].MaxCout)
-				AmmoSlots[i].Cout = AmmoSlots[i].MaxCout;
+			AmmoSlots[i].Count += CountChangeAmmo;
+			if (AmmoSlots[i].Count > AmmoSlots[i].MaxCount)
+				AmmoSlots[i].Count = AmmoSlots[i].MaxCount;
 
-			AmmoChangeEvent_Multicast(AmmoSlots[i].WeaponType, AmmoSlots[i].Cout);
+			AmmoChangeEvent_Multicast(AmmoSlots[i].WeaponType, AmmoSlots[i].Count);
 
 			bIsFind = true;
 		}
@@ -380,9 +380,9 @@ void UTDSInventoryComponent::AmmoSlotChangeValue(EWeaponType TypeWeapon, int32 C
 	}
 }
 
-bool UTDSInventoryComponent::CheckAmmoForWeapon(EWeaponType TypeWeapon, int8& AviableAmmoForWeapon)
+bool UTDSInventoryComponent::CheckAmmoForWeapon(EWeaponType TypeWeapon, int8& AvailableAmmoForWeapon)
 {
-	AviableAmmoForWeapon = 0;
+	AvailableAmmoForWeapon = 0;
 	bool bIsFind = false;
 	int8 i = 0;
 	while (i < AmmoSlots.Num() && !bIsFind)
@@ -390,8 +390,8 @@ bool UTDSInventoryComponent::CheckAmmoForWeapon(EWeaponType TypeWeapon, int8& Av
 		if (AmmoSlots[i].WeaponType == TypeWeapon)
 		{
 			bIsFind = true;
-			AviableAmmoForWeapon = AmmoSlots[i].Cout;
-			if (AmmoSlots[i].Cout > 0)
+			AvailableAmmoForWeapon = AmmoSlots[i].Count;
+			if (AmmoSlots[i].Count > 0)
 			{
 				return true;
 			}
@@ -399,10 +399,10 @@ bool UTDSInventoryComponent::CheckAmmoForWeapon(EWeaponType TypeWeapon, int8& Av
 		i++;
 	}
 
-	if (AviableAmmoForWeapon <= 0)
+	if (AvailableAmmoForWeapon <= 0)
 		WeaponAmmoEmptyEvent_Multicast(TypeWeapon);
 	else
-		WeaponAmmoAviableEvent_Multicast(TypeWeapon);
+		WeaponAmmoAvailableEvent_Multicast(TypeWeapon);
 
 	return false;
 }
@@ -413,7 +413,7 @@ bool UTDSInventoryComponent::CheckCanTakeAmmo(EWeaponType AmmoType)
 	int8 i = 0;
 	while (i < AmmoSlots.Num() && !Result)
 	{
-		if (AmmoSlots[i].WeaponType == AmmoType && AmmoSlots[i].Cout < AmmoSlots[i].MaxCout)
+		if (AmmoSlots[i].WeaponType == AmmoType && AmmoSlots[i].Count < AmmoSlots[i].MaxCount)
 			Result = true;
 		i++;
 	}
@@ -444,7 +444,7 @@ bool UTDSInventoryComponent::SwitchWeaponToInventory(FWeaponSlot NewWeapon, int3
 	{
 		WeaponSlots[IndexSlot] = NewWeapon;
 
-		SwitchWeaponToIndexByNextPreviosIndex(CurrentIndexWeaponChar, -1, NewWeapon.AdditionalInfo, true);
+		SwitchWeaponToIndexByNextPreviousIndex(CurrentIndexWeaponChar, -1, NewWeapon.AdditionalInfo, true);
 
 		UpdateWeaponSlotsEvent_Multicast(IndexSlot, NewWeapon);
 
@@ -544,7 +544,6 @@ void UTDSInventoryComponent::InitInventory_OnServer_Implementation(const TArray<
 {
 	WeaponSlots = NewWeaponSlotsInfo;
 	AmmoSlots = NewAmmoSlotsInfo;
-	//Find init weaponsSlots and First Init Weapon
 	
 	MaxSlotsWeapon = WeaponSlots.Num();
 
@@ -574,9 +573,9 @@ void UTDSInventoryComponent::WeaponAdditionalInfoChangeEvent_Multicast_Implement
 	OnWeaponAdditionalInfoChange.Broadcast(IndexWeapon, AdditionalWeaponInfo);
 }
 
-void UTDSInventoryComponent::AmmoChangeEvent_Multicast_Implementation(EWeaponType TypeWeapon, int32 Cout)
+void UTDSInventoryComponent::AmmoChangeEvent_Multicast_Implementation(EWeaponType TypeWeapon, int32 Count)
 {
-	OnAmmoChange.Broadcast(TypeWeapon, Cout);
+	OnAmmoChange.Broadcast(TypeWeapon, Count);
 }
 
 void UTDSInventoryComponent::WeaponAmmoEmptyEvent_Multicast_Implementation(EWeaponType TypeWeapon)
@@ -584,9 +583,9 @@ void UTDSInventoryComponent::WeaponAmmoEmptyEvent_Multicast_Implementation(EWeap
 	OnWeaponAmmoEmpty.Broadcast(TypeWeapon);
 }
 
-void UTDSInventoryComponent::WeaponAmmoAviableEvent_Multicast_Implementation(EWeaponType TypeWeapon)
+void UTDSInventoryComponent::WeaponAmmoAvailableEvent_Multicast_Implementation(EWeaponType TypeWeapon)
 {
-	OnWeaponAmmoAviable.Broadcast(TypeWeapon);
+	OnWeaponAmmoAvailable.Broadcast(TypeWeapon);
 }
 
 void UTDSInventoryComponent::UpdateWeaponSlotsEvent_Multicast_Implementation(int32 IndexSlotChange, FWeaponSlot NewInfo)

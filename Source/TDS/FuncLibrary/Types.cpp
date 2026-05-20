@@ -9,25 +9,25 @@ void UTypes::AddEffectBySurfaceType(AActor* TakeEffectActor, FName BoneHit, TSub
 {
 	if (SurfaceType != EPhysicalSurface::SurfaceType_Default && TakeEffectActor && AddEffectClass)
 	{
-		UTDS_StateEffect* myEffect = Cast<UTDS_StateEffect>(AddEffectClass->GetDefaultObject());
-		if (myEffect)
+		UTDS_StateEffect* Effect = Cast<UTDS_StateEffect>(AddEffectClass->GetDefaultObject());
+		if (Effect)
 		{
 			bool bIsHavePossibleSurface = false;
 			int8 i = 0;
-			while (i < myEffect->PossibleInteractSurface.Num() && !bIsHavePossibleSurface)
+			while (i < Effect->PossibleInteractSurface.Num() && !bIsHavePossibleSurface)
 			{
-				if (myEffect->PossibleInteractSurface[i] == SurfaceType)
+				if (Effect->PossibleInteractSurface[i] == SurfaceType)
 				{
 					bIsHavePossibleSurface = true;
 					bool bIsCanAddEffect = false;
-					if (!myEffect->bIsStakable)
+					if (!Effect->bIsStackable)
 					{
 						int8 j = 0;
 						TArray<UTDS_StateEffect*> CurrentEffects;
-						ITDS_IGameActor* myInterface = Cast<ITDS_IGameActor>(TakeEffectActor);
-						if (myInterface)
+						ITDS_IGameActor* ActorInterface = Cast<ITDS_IGameActor>(TakeEffectActor);
+						if (ActorInterface)
 						{
-							CurrentEffects = myInterface->GetAllCurrentEffects();
+							CurrentEffects = ActorInterface->GetAllCurrentEffects();
 						}
 
 						if (CurrentEffects.Num() > 0)

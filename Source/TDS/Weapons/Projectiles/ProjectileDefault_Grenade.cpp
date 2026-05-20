@@ -17,21 +17,21 @@ void AProjectileDefault_Grenade::Tick(float DeltaTime)
 
 	if (HasAuthority())
 	{
-		TimerExplose(DeltaTime);
+		TimerExplode(DeltaTime);
 	}
 }
 
-void AProjectileDefault_Grenade::TimerExplose(float DeltaTime)
+void AProjectileDefault_Grenade::TimerExplode(float DeltaTime)
 {
 	if (TimerEnabled)
 	{
-		if (TimerToExplose > TimeToExplose)
+		if (TimerToExplode > TimeToExplode)
 		{
-			Explose_OnServer();
+			Explode_OnServer();
 		}
 		else
 		{
-			TimerToExplose += DeltaTime;
+			TimerToExplode += DeltaTime;
 		}
 	}
 }
@@ -40,7 +40,7 @@ void AProjectileDefault_Grenade::BulletCollisionSphereHit(class UPrimitiveCompon
 {
 	if (!TimerEnabled)
 	{
-		Explose_OnServer();
+		Explode_OnServer();
 	}
 	Super::BulletCollisionSphereHit(HitComp, OtherActor, OtherComp, NormalImpulse, Hit);
 }
@@ -50,7 +50,7 @@ void AProjectileDefault_Grenade::ImpactProjectile()
 	TimerEnabled = true;
 }
 
-void AProjectileDefault_Grenade::Explose_OnServer_Implementation()
+void AProjectileDefault_Grenade::Explode_OnServer_Implementation()
 {
 	if (ShowDebug)
 	{
@@ -60,19 +60,19 @@ void AProjectileDefault_Grenade::Explose_OnServer_Implementation()
 	}
 
 	TimerEnabled = false;
-	if (ProjectileSetting.ExploseFX)
+	if (ProjectileSetting.ExplodeFX)
 	{
-		SpawnExploseFX_Multicast(ProjectileSetting.ExploseFX);
+		SpawnExplodeFX_Multicast(ProjectileSetting.ExplodeFX);
 	}
-	if (ProjectileSetting.ExploseSound)
+	if (ProjectileSetting.ExplodeSound)
 	{
-		SpawnExploseSound_Multicast(ProjectileSetting.ExploseSound);
+		SpawnExplodeSound_Multicast(ProjectileSetting.ExplodeSound);
 	}
 
 	TArray<AActor*> IgnoredActor;
 	UGameplayStatics::ApplyRadialDamageWithFalloff(GetWorld(),
-		ProjectileSetting.ExploseMaxDamage,
-		ProjectileSetting.ExploseMaxDamage * 0.2f,
+		ProjectileSetting.ExplodeMaxDamage,
+		ProjectileSetting.ExplodeMaxDamage * 0.2f,
 		GetActorLocation(),
 		ProjectileSetting.ProjectileMinRadiusDamage,
 		ProjectileSetting.ProjectileMaxRadiusDamage, 
@@ -82,12 +82,12 @@ void AProjectileDefault_Grenade::Explose_OnServer_Implementation()
 	this->Destroy();
 }
 
-void AProjectileDefault_Grenade::SpawnExploseFX_Multicast_Implementation(UParticleSystem* FXTemplate)
+void AProjectileDefault_Grenade::SpawnExplodeFX_Multicast_Implementation(UParticleSystem* FXTemplate)
 {
 	UGameplayStatics::SpawnEmitterAtLocation(GetWorld(), FXTemplate, GetActorLocation(), GetActorRotation(), FVector(1.0f));
 }
 
-void AProjectileDefault_Grenade::SpawnExploseSound_Multicast_Implementation(USoundBase* ExploseSound)
+void AProjectileDefault_Grenade::SpawnExplodeSound_Multicast_Implementation(USoundBase* ExplodeSound)
 {
-	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ExploseSound, GetActorLocation());
+	UGameplayStatics::PlaySoundAtLocation(GetWorld(), ExplodeSound, GetActorLocation());
 }

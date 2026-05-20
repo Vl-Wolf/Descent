@@ -30,15 +30,10 @@ public:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Shield")
 	float ShieldRecoveryRate = 0.1f;
-
-
-
+	
 	float Shield = 100.0f;
 
-public:
-
-	
-	void ChangeHealthValue_OnServer(float ChangeValue) override;
+	virtual void ChangeHealthValue_OnServer(float ChangeValue) override;
 	float GetCurrentShield();
 	void ChangeShieldValue(float ChangeValue);
 	void CoolDownShieldEnd();
@@ -48,5 +43,5 @@ public:
 	float GetShieldValue();
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void ShieldChangeEvent_Multicast(float newShield, float Damage);
+	void ShieldChangeEvent_Multicast(float NewShield, float Damage);
 };

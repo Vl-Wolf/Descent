@@ -14,7 +14,6 @@
 #include "Engine/World.h"
 #include "TDS/Game/TDSGameInstance.h"
 #include "TDS/Weapons/Projectiles/ProjectileDefault.h"
-#include "TDS/TDS.h"
 #include "Net/UnrealNetwork.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Engine/ActorChannel.h"
@@ -77,11 +76,11 @@ void ATDSCharacter::Tick(float DeltaSeconds)
 
 	if (CurrentCursor)
 	{
-		APlayerController* myPC = Cast<APlayerController>(GetController());
-		if (myPC && myPC->IsLocalPlayerController())
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		if (PlayerController && PlayerController->IsLocalPlayerController())
 		{
 			FHitResult TraceHitResult;
-			myPC->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
+			PlayerController->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
 			FVector CursorFV = TraceHitResult.ImpactNormal;
 			FRotator CursorR = CursorFV.Rotation();
 
@@ -104,7 +103,6 @@ void ATDSCharacter::BeginPlay()
 			CurrentCursor = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), CursorMaterial, CursorSize, FVector(0));
 		}
 	}
-
 }
 
 void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* NewInputComponent)
@@ -127,7 +125,7 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* NewInputComponent
 	NewInputComponent->BindAction(TEXT("ReloadEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::TryReloadWeapon);
 
 	NewInputComponent->BindAction(TEXT("SwitchNextWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchNextWeapon);
-	NewInputComponent->BindAction(TEXT("SwitchPreviosWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchPreviousWeapon);
+	NewInputComponent->BindAction(TEXT("SwitchPreviousWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchPreviousWeapon);
 
 	NewInputComponent->BindAction(TEXT("AbilityAction"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TryAbilityEnabled);
 
@@ -255,29 +253,24 @@ void ATDSCharacter::MovementTick(float DeltaTime)
 			{
 			case EMovementState::Aim_State:
 				Displacement = FVector(0.0f, 0.0f, 160.0f);
-				//CurrentWeapon->ShouldReduceDispersion = true;
 				bIsReduceDispersion = true;
 				break;
 			case EMovementState::AimWalk_State:
 				Displacement = FVector(0.0f, 0.0f, 160.0f);
-				//CurrentWeapon->ShouldReduceDispersion = true;
 				bIsReduceDispersion = true;
 				break;
 			case EMovementState::Walk_State:
 				Displacement = FVector(0.0f, 0.0f, 120.0f);
-				//CurrentWeapon->ShouldReduceDispersion = false;
 				break;
 			case EMovementState::Run_State:
 				Displacement = FVector(0.0f, 0.0f, 120.0f);
-				//CurrentWeapon->ShouldReduceDispersion = false;
 				break;
 			case EMovementState::Sprint_State:
 				break;
 			default:
 				break;
 			}
-
-			//CurrentWeapon->ShootEndLocation = ResultHit.Location + Displacement;
+			
 			CurrentWeapon->UpdateWeaponByCharacterMovementState_OnServer(ResultHit.Location + Displacement, bIsReduceDispersion);
 		}
 	}
@@ -301,31 +294,31 @@ int32 ATDSCharacter::GetCurrentWeaponIndex()
 
 bool ATDSCharacter::GetIsAlive()
 {
-	bool result = false;
+	bool Result = false;
 	if (HealthComponent)
 	{
-		result = HealthComponent->GetIsAlive();
+		Result = HealthComponent->GetIsAlive();
 	}
-	return result;
+	return Result;
 }
 
 void ATDSCharacter::AttackCharEvent(bool bIsFiring)
 {
-	AWeaponDefault* myWeapon = nullptr;
-	myWeapon = GetCurrentWeapon();
-	if (myWeapon)
-	{
-		myWeapon->SetWeaponStateFire_OnServer(bIsFiring);
-	}
-	else
+	AWeaponDefault* Weapon = GetCurrentWeapon();
+	
+	if (!Weapon)
 	{
 		UE_LOG(LogTemp, Warning, TEXT("ATDSCharacter::AttackCharEvent - CurrentWeapon -NULL"));
+		return;
 	}
+	
+	Weapon->SetWeaponStateFire_OnServer(bIsFiring);
 }
 
 void ATDSCharacter::CharacterUpdate()
 {
 	float ResSpeed = 600.0f;
+	
 	switch (MovementState)
 	{
 	case EMovementState::Aim_State:
@@ -391,15 +384,12 @@ void ATDSCharacter::ChangeMovementState()
 	}
 
 	SetMovementState_OnServer(NewState);
-
-	//CharacterUpdate();
+	
 
 	//weapon state
-	AWeaponDefault* myWeapon = GetCurrentWeapon();
-	if (myWeapon)
-	{
-		myWeapon->UpdateStateWeapon_OnServer(NewState);
-	}
+	AWeaponDefault* Weapon = GetCurrentWeapon();
+	if (Weapon)
+		Weapon->UpdateStateWeapon_OnServer(NewState);
 }
 
 AWeaponDefault* ATDSCharacter::GetCurrentWeapon()
@@ -416,41 +406,41 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 		CurrentWeapon = nullptr;
 	}
 
-	UTDSGameInstance* myGI = Cast<UTDSGameInstance>(GetGameInstance());
-	FWeaponInfo myWeaponInfo;
-	if (myGI)
+	UTDSGameInstance* GI = Cast<UTDSGameInstance>(GetGameInstance());
+	FWeaponInfo WeaponInfo;
+	if (GI)
 	{
-		if (myGI->GetWeaponInfoByName(IdWeaponName, myWeaponInfo))
+		if (GI->GetWeaponInfoByName(IdWeaponName, WeaponInfo))
 		{
-			if (myWeaponInfo.WeaponClass)
+			if (WeaponInfo.WeaponClass)
 			{
 				FVector SpawnLocation = FVector(0);
-				FRotator SpawnRoratation = FRotator(0);
+				FRotator SpawnRotation = FRotator(0);
 
 				FActorSpawnParameters SpawnParams;
 				SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 				SpawnParams.Owner = this;
 				SpawnParams.Instigator = GetInstigator();
 
-				AWeaponDefault* myWeapon = Cast<AWeaponDefault>(GetWorld()->SpawnActor(myWeaponInfo.WeaponClass, &SpawnLocation, &SpawnRoratation, SpawnParams));
-				if (myWeapon)
+				AWeaponDefault* Weapon = Cast<AWeaponDefault>(GetWorld()->SpawnActor(WeaponInfo.WeaponClass, &SpawnLocation, &SpawnRotation, SpawnParams));
+				if (Weapon)
 				{
 					FAttachmentTransformRules Rule(EAttachmentRule::SnapToTarget, false);
-					myWeapon->AttachToComponent(GetMesh(), Rule, FName("WeaponSocketRightHand"));
-					CurrentWeapon = myWeapon;
+					Weapon->AttachToComponent(GetMesh(), Rule, FName("WeaponSocketRightHand"));
+					CurrentWeapon = Weapon;
 
-					myWeapon->IdWeaponName = IdWeaponName;
-					myWeapon->WeaponSetting = myWeaponInfo;
+					Weapon->IdWeaponName = IdWeaponName;
+					Weapon->WeaponSetting = WeaponInfo;
 
-					myWeapon->ReloadTime = myWeaponInfo.ReloadTime;
-					myWeapon->UpdateStateWeapon_OnServer(MovementState);
+					Weapon->ReloadTime = WeaponInfo.ReloadTime;
+					Weapon->UpdateStateWeapon_OnServer(MovementState);
 
-					myWeapon->AdditionalWeaponInfo = WeaponAdditionalInfo;
+					Weapon->AdditionalWeaponInfo = WeaponAdditionalInfo;
 					CurrentIndexWeapon = NewCurrentIndexWeapon;
 
-					myWeapon->OnWeaponReloadStart.AddDynamic(this, &ATDSCharacter::WeaponReloadStart);
-					myWeapon->OnWeaponReloadEnd.AddDynamic(this, &ATDSCharacter::WeaponReloadEnd);
-					myWeapon->OnWeaponFire.AddDynamic(this, &ATDSCharacter::WeaponFire);
+					Weapon->OnWeaponReloadStart.AddDynamic(this, &ATDSCharacter::WeaponReloadStart);
+					Weapon->OnWeaponReloadEnd.AddDynamic(this, &ATDSCharacter::WeaponReloadEnd);
+					Weapon->OnWeaponFire.AddDynamic(this, &ATDSCharacter::WeaponFire);
 
 
 					if (CurrentWeapon->GetWeaponRound() <= 0 && CurrentWeapon->CheckCanWeaponReload())
@@ -459,7 +449,7 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 					}
 					if (InventoryComponent)
 					{
-						InventoryComponent->OnWeaponAmmoAviable.Broadcast(myWeapon->WeaponSetting.WeaponType);
+						InventoryComponent->OnWeaponAmmoAvailable.Broadcast(Weapon->WeaponSetting.WeaponType);
 					}
 				}
 			}
@@ -570,7 +560,7 @@ void ATDSCharacter::TrySwitchNextWeapon()
 		}
 		if (InventoryComponent)
 		{
-			if (InventoryComponent->SwitchWeaponToIndexByNextPreviosIndex(CurrentIndexWeapon + 1, OldIndex, OldInfo, true))
+			if (InventoryComponent->SwitchWeaponToIndexByNextPreviousIndex(CurrentIndexWeapon + 1, OldIndex, OldInfo, true))
 			{
 
 			}
@@ -594,7 +584,7 @@ void ATDSCharacter::TrySwitchPreviousWeapon()
 		}
 		if (InventoryComponent)
 		{
-			if (InventoryComponent->SwitchWeaponToIndexByNextPreviosIndex(CurrentIndexWeapon - 1, OldIndex, OldInfo, false))
+			if (InventoryComponent->SwitchWeaponToIndexByNextPreviousIndex(CurrentIndexWeapon - 1, OldIndex, OldInfo, false))
 			{
 
 			}
@@ -627,10 +617,10 @@ EPhysicalSurface ATDSCharacter::GetSurfaceType()
 		{
 			if (GetMesh())
 			{
-				UMaterialInterface* myMaterial = GetMesh()->GetMaterial(0);
-				if (myMaterial)
+				UMaterialInterface* Material = GetMesh()->GetMaterial(0);
+				if (Material)
 				{
-					Result = myMaterial->GetPhysicalMaterial()->SurfaceType;
+					Result = Material->GetPhysicalMaterial()->SurfaceType;
 				}
 			}
 		}
@@ -669,9 +659,7 @@ void ATDSCharacter::TryReloadWeapon_OnServer_Implementation()
 		return;
 	
 	if (CurrentWeapon->GetWeaponRound() < CurrentWeapon->WeaponSetting.MaxRound && CurrentWeapon->CheckCanWeaponReload())
-	{
 		CurrentWeapon->InitReload();
-	}
 }
 
 void ATDSCharacter::SetActorRotationByYaw_OnServer_Implementation(float Yaw)
@@ -682,10 +670,7 @@ void ATDSCharacter::SetActorRotationByYaw_OnServer_Implementation(float Yaw)
 void ATDSCharacter::SetActorRotationByYaw_Multicast_Implementation(float Yaw)
 {
 	if (Controller && !Controller->IsLocalPlayerController())
-	{
 		SetActorRotation(FQuat(FRotator(0.0f, Yaw, 0.0f)));
-	}
-
 }
 
 void ATDSCharacter::SetMovementState_OnServer_Implementation(EMovementState NewState)
@@ -702,9 +687,7 @@ void ATDSCharacter::SetMovementState_Multicast_Implementation(EMovementState New
 void ATDSCharacter::PlayAnim_Multicast_Implementation(UAnimMontage* Anim)
 {
 	if (GetMesh() && GetMesh()->GetAnimInstance())
-	{
 		GetMesh()->GetAnimInstance()->Montage_Play(Anim);
-	}
 }
 
 void ATDSCharacter::CharacterDead_BP_Implementation()
@@ -723,7 +706,6 @@ void ATDSCharacter::CharacterDead()
 		if (DeadsAnim.IsValidIndex(rnd) && DeadsAnim[rnd] && GetMesh() && GetMesh()->GetAnimInstance())
 		{
 			TimeAnim = DeadsAnim[rnd]->GetPlayLength();
-			//GetMesh()->GetAnimInstance()->Montage_Play(DeadsAnim[rnd]);
 			PlayAnim_Multicast(DeadsAnim[rnd]);
 		}
 
@@ -732,37 +714,30 @@ void ATDSCharacter::CharacterDead()
 			GetController()->UnPossess();
 		}
 
-		float DecraeseAnimTimer = FMath::FRandRange(0.2f, 1.0f);
+		float DecreaseAnimTimer = FMath::FRandRange(0.2f, 1.0f);
 
-		GetWorldTimerManager().SetTimer(TimerHandle_RagDollTimer, this, &ATDSCharacter::EnableRagdoll_Multicast, TimeAnim - DecraeseAnimTimer, false);
+		GetWorldTimerManager().SetTimer(TimerHandle_RagDollTimer, this, &ATDSCharacter::EnableRagdoll_Multicast, TimeAnim - DecreaseAnimTimer, false);
 
 		SetLifeSpan(20.0f);
 		if (GetCurrentWeapon())
-		{
 			GetCurrentWeapon()->SetLifeSpan(20.0f);
-		}
 	}
 	else
 	{
 		if (GetCursorToWorld())
-		{
 			GetCursorToWorld()->SetVisibility(false);
-		}
 
 		AttackCharEvent(false);
 	}
 
 	if (GetCapsuleComponent())
-	{
 		GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	}
 }
 
 void ATDSCharacter::EnableRagdoll_Multicast_Implementation()
 {
 	if (GetMesh())
 	{
-
 		GetMesh()->SetCollisionObjectType(ECC_PhysicsBody);
 		GetMesh()->SetCollisionResponseToChannel(ECC_Pawn, ECollisionResponse::ECR_Block);
 		GetMesh()->SetCollisionEnabled(ECollisionEnabled::PhysicsOnly);
@@ -827,15 +802,15 @@ void ATDSCharacter::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd)
 		if (Effect && Effect->ParticleEffect)
 		{
 			FName NameBoneToAttached = Effect->NameBone;
-			FVector Loc = FVector(0);
+			FVector Location = FVector(0);
 
-			USkeletalMeshComponent* myMesh = GetMesh();
+			USkeletalMeshComponent* CharacterMesh = GetMesh();
 			
-			if (myMesh)
+			if (CharacterMesh)
 			{
-				UParticleSystemComponent* newParticleSystem = UGameplayStatics::UGameplayStatics::SpawnEmitterAttached(Effect->ParticleEffect, myMesh, 
-					NameBoneToAttached, Loc, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-				ParticleSystemEffects.Add(newParticleSystem);
+				UParticleSystemComponent* NewParticleSystem = UGameplayStatics::UGameplayStatics::SpawnEmitterAttached(Effect->ParticleEffect, CharacterMesh, 
+					NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+				ParticleSystemEffects.Add(NewParticleSystem);
 			}
 		}
 	}

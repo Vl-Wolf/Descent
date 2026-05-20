@@ -1,36 +1,32 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "TDS_EnviromentStructure.h"
+#include "TDS_EnvironmentStructure.h"
 #include "Net/UnrealNetwork.h"
 #include "Particles/ParticleSystemComponent.h"
 #include "Engine/ActorChannel.h"
 #include "Kismet/GameplayStatics.h"
 
-// Sets default values
-ATDS_EnviromentStructure::ATDS_EnviromentStructure()
+ATDS_EnvironmentStructure::ATDS_EnvironmentStructure()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	bReplicates = true;
 }
 
-// Called when the game starts or when spawned
-void ATDS_EnviromentStructure::BeginPlay()
+void ATDS_EnvironmentStructure::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
-// Called every frame
-void ATDS_EnviromentStructure::Tick(float DeltaTime)
+void ATDS_EnvironmentStructure::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 }
 
-EPhysicalSurface ATDS_EnviromentStructure::GetSurfaceType()
+EPhysicalSurface ATDS_EnvironmentStructure::GetSurfaceType()
 {
 	EPhysicalSurface Result = EPhysicalSurface::SurfaceType_Default;
 	UStaticMeshComponent* myMesh = Cast<UStaticMeshComponent>(GetComponentByClass(UStaticMeshComponent::StaticClass()));
@@ -46,12 +42,12 @@ EPhysicalSurface ATDS_EnviromentStructure::GetSurfaceType()
 	return Result;
 }
 
-TArray<UTDS_StateEffect*> ATDS_EnviromentStructure::GetAllCurrentEffects()
+TArray<UTDS_StateEffect*> ATDS_EnvironmentStructure::GetAllCurrentEffects()
 {
 	return Effects;
 }
 
-void ATDS_EnviromentStructure::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect)
+void ATDS_EnvironmentStructure::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect)
 {
 	Effects.Remove(RemoveEffect);
 
@@ -59,7 +55,7 @@ void ATDS_EnviromentStructure::RemoveEffect_Implementation(UTDS_StateEffect* Rem
 	EffectRemove = RemoveEffect;
 }
 
-void ATDS_EnviromentStructure::AddEffect_Implementation(UTDS_StateEffect* newEffect)
+void ATDS_EnvironmentStructure::AddEffect_Implementation(UTDS_StateEffect* newEffect)
 {
 	Effects.Add(newEffect);
 
@@ -67,7 +63,7 @@ void ATDS_EnviromentStructure::AddEffect_Implementation(UTDS_StateEffect* newEff
 	EffectAdd = newEffect;
 }
 
-void ATDS_EnviromentStructure::EffectAdd_OnRep()
+void ATDS_EnvironmentStructure::EffectAdd_OnRep()
 {
 	if (EffectAdd)
 	{
@@ -75,7 +71,7 @@ void ATDS_EnviromentStructure::EffectAdd_OnRep()
 	}
 }
 
-void ATDS_EnviromentStructure::EffectRemove_OnRep()
+void ATDS_EnvironmentStructure::EffectRemove_OnRep()
 {
 	if (EffectRemove)
 	{
@@ -83,22 +79,22 @@ void ATDS_EnviromentStructure::EffectRemove_OnRep()
 	}
 }
 
-void ATDS_EnviromentStructure::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd)
+void ATDS_EnvironmentStructure::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd)
 {
 	if (bIsAdd)
 	{
 		if (Effect && Effect->ParticleEffect)
 		{
 			FName NameBoneToAttached = NAME_None;
-			FVector Loc = OffsetEffect;
+			FVector Location = OffsetEffect;
 
-			USceneComponent* mySceneComp = GetRootComponent();
+			USceneComponent* SceneComponent = GetRootComponent();
 
-			if (mySceneComp)
+			if (SceneComponent)
 			{
-				UParticleSystemComponent* newParticleSystem = UGameplayStatics::UGameplayStatics::SpawnEmitterAttached(Effect->ParticleEffect, mySceneComp,
-					NameBoneToAttached, Loc, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-				ParticleSystemEffects.Add(newParticleSystem);
+				UParticleSystemComponent* NewParticleSystem = UGameplayStatics::UGameplayStatics::SpawnEmitterAttached(Effect->ParticleEffect, SceneComponent,
+					NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+				ParticleSystemEffects.Add(NewParticleSystem);
 			}
 		}
 	}
@@ -108,7 +104,7 @@ void ATDS_EnviromentStructure::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAd
 		bool bIsFind = false;
 		if (ParticleSystemEffects.Num() > 0)
 		{
-			while (i < ParticleSystemEffects.Num(), !bIsFind)
+			while (i < ParticleSystemEffects.Num() && !bIsFind)
 			{
 				if (ParticleSystemEffects[i]->Template && Effect->ParticleEffect && Effect->ParticleEffect == ParticleSystemEffects[i]->Template)
 				{
@@ -123,7 +119,7 @@ void ATDS_EnviromentStructure::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAd
 	}
 }
 
-bool ATDS_EnviromentStructure::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
+bool ATDS_EnvironmentStructure::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
 	bool Wrote = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
 
@@ -138,11 +134,11 @@ bool ATDS_EnviromentStructure::ReplicateSubobjects(UActorChannel* Channel, FOutB
 	return Wrote;
 }
 
-void ATDS_EnviromentStructure::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+void ATDS_EnvironmentStructure::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ATDS_EnviromentStructure, Effects);
-	DOREPLIFETIME(ATDS_EnviromentStructure, EffectAdd);
-	DOREPLIFETIME(ATDS_EnviromentStructure, EffectRemove);
+	DOREPLIFETIME(ATDS_EnvironmentStructure, Effects);
+	DOREPLIFETIME(ATDS_EnvironmentStructure, EffectAdd);
+	DOREPLIFETIME(ATDS_EnvironmentStructure, EffectRemove);
 }

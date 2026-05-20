@@ -120,7 +120,7 @@ public:
 	void CancelReload();
 
 	bool CheckCanWeaponReload();
-	int8 GetAviableAmmoForReload();
+	int8 GetAvailableAmmoForReload();
 
 	void DropMagazine();
 	

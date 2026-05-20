@@ -177,8 +177,8 @@ void AWeaponDefault::Fire()
 			{
 				FVector Dir = EndLocation - SpawnLocation;
 				Dir.Normalize();
-				FMatrix myMatrix(Dir, FVector(0, 1, 0), FVector(0, 0, 1), FVector::ZeroVector);
-				SpawnRotation = myMatrix.Rotator();
+				FMatrix Matrix(Dir, FVector(0, 1, 0), FVector(0, 0, 1), FVector::ZeroVector);
+				SpawnRotation = Matrix.Rotator();
 
 				//basic fire
 				FActorSpawnParameters SpawnParams;
@@ -186,10 +186,10 @@ void AWeaponDefault::Fire()
 				SpawnParams.Owner = GetOwner();
 				SpawnParams.Instigator = GetInstigator();
 
-				AProjectileDefault* myProjectile = Cast<AProjectileDefault>(GetWorld()->SpawnActor(ProjectileInfo.Projectile, &SpawnLocation, &SpawnRotation, SpawnParams));
-				if (myProjectile)
+				AProjectileDefault* Projectile = Cast<AProjectileDefault>(GetWorld()->SpawnActor(ProjectileInfo.Projectile, &SpawnLocation, &SpawnRotation, SpawnParams));
+				if (Projectile)
 				{
-					myProjectile->InitProjectile(WeaponSetting.ProjectileSetting);
+					Projectile->InitProjectile(WeaponSetting.ProjectileSetting);
 				}
 			}
 			else
@@ -217,23 +217,23 @@ void AWeaponDefault::Fire()
 
 				if (Hit.GetActor() && Hit.PhysMaterial.IsValid())
 				{
-					EPhysicalSurface mySurfaceType = UGameplayStatics::GetSurfaceType(Hit);
+					EPhysicalSurface SurfaceType = UGameplayStatics::GetSurfaceType(Hit);
 
-					if (WeaponSetting.ProjectileSetting.HitDecals.Contains(mySurfaceType))
+					if (WeaponSetting.ProjectileSetting.HitDecals.Contains(SurfaceType))
 					{
-						UMaterialInterface* myMaterial = WeaponSetting.ProjectileSetting.HitDecals[mySurfaceType];
+						UMaterialInterface* Material = WeaponSetting.ProjectileSetting.HitDecals[SurfaceType];
 
-						if (myMaterial && Hit.GetComponent())
+						if (Material && Hit.GetComponent())
 						{
-							SpawnTraceHitDecal_Multicast(myMaterial, Hit);
+							SpawnTraceHitDecal_Multicast(Material, Hit);
 						}
 					}
-					if (WeaponSetting.ProjectileSetting.HitFXs.Contains(mySurfaceType))
+					if (WeaponSetting.ProjectileSetting.HitFXs.Contains(SurfaceType))
 					{
-						UParticleSystem* myParticle = WeaponSetting.ProjectileSetting.HitFXs[mySurfaceType];
-						if (myParticle)
+						UParticleSystem* Particle = WeaponSetting.ProjectileSetting.HitFXs[SurfaceType];
+						if (Particle)
 						{
-							SpawnTraceHitFX_Multicast(myParticle, Hit);
+							SpawnTraceHitFX_Multicast(Particle, Hit);
 						}
 						
 					}
@@ -243,7 +243,7 @@ void AWeaponDefault::Fire()
 						SpawnTraceHitSound_Multicast(WeaponSetting.ProjectileSetting.HitSound, Hit);
 					}
 
-					UTypes::AddEffectBySurfaceType(Hit.GetActor(), Hit.BoneName, ProjectileInfo.Effect, mySurfaceType);
+					UTypes::AddEffectBySurfaceType(Hit.GetActor(), Hit.BoneName, ProjectileInfo.Effect, SurfaceType);
 
 					UGameplayStatics::ApplyPointDamage(Hit.GetActor(), WeaponSetting.ProjectileSetting.ProjectileDamage, Hit.TraceStart, Hit, GetInstigatorController(), this, NULL);
 				}
@@ -273,31 +273,31 @@ void AWeaponDefault::UpdateStateWeapon_OnServer_Implementation(EMovementState Ne
 	{
 	case EMovementState::Aim_State:
 		WeaponAiming = true;
-		CurrentDispersionMax = WeaponSetting.DispesionWeapon.Aim_StateDispersionAimMax;
-		CurrentDispersionMin = WeaponSetting.DispesionWeapon.Aim_StateDispersionAimMin;
-		CurrentDispersionRecoil = WeaponSetting.DispesionWeapon.Aim_StateDispersionAimRecoil;
-		CurrentDispersionReduction = WeaponSetting.DispesionWeapon.Aim_StateDispersionReduction;
+		CurrentDispersionMax = WeaponSetting.DispersionWeapon.Aim_StateDispersionAimMax;
+		CurrentDispersionMin = WeaponSetting.DispersionWeapon.Aim_StateDispersionAimMin;
+		CurrentDispersionRecoil = WeaponSetting.DispersionWeapon.Aim_StateDispersionAimRecoil;
+		CurrentDispersionReduction = WeaponSetting.DispersionWeapon.Aim_StateDispersionReduction;
 		break;
 	case EMovementState::AimWalk_State:
 		WeaponAiming = true;
-		CurrentDispersionMax = WeaponSetting.DispesionWeapon.AimWalk_StateDispersionAimMax;
-		CurrentDispersionMin = WeaponSetting.DispesionWeapon.AimWalk_StateDispersionAimMin;
-		CurrentDispersionRecoil = WeaponSetting.DispesionWeapon.AimWalk_StateDispersionAimRecoil;
-		CurrentDispersionReduction = WeaponSetting.DispesionWeapon.AimWalk_StateDispersionReduction;
+		CurrentDispersionMax = WeaponSetting.DispersionWeapon.AimWalk_StateDispersionAimMax;
+		CurrentDispersionMin = WeaponSetting.DispersionWeapon.AimWalk_StateDispersionAimMin;
+		CurrentDispersionRecoil = WeaponSetting.DispersionWeapon.AimWalk_StateDispersionAimRecoil;
+		CurrentDispersionReduction = WeaponSetting.DispersionWeapon.AimWalk_StateDispersionReduction;
 		break;
 	case EMovementState::Walk_State:
 		WeaponAiming = false;
-		CurrentDispersionMax = WeaponSetting.DispesionWeapon.Walk_StateDispersionAimMax;
-		CurrentDispersionMin = WeaponSetting.DispesionWeapon.Walk_StateDispersionAimMin;
-		CurrentDispersionRecoil = WeaponSetting.DispesionWeapon.Walk_StateDispersionAimRecoil;
-		CurrentDispersionReduction = WeaponSetting.DispesionWeapon.Walk_StateDispersionReduction;
+		CurrentDispersionMax = WeaponSetting.DispersionWeapon.Walk_StateDispersionAimMax;
+		CurrentDispersionMin = WeaponSetting.DispersionWeapon.Walk_StateDispersionAimMin;
+		CurrentDispersionRecoil = WeaponSetting.DispersionWeapon.Walk_StateDispersionAimRecoil;
+		CurrentDispersionReduction = WeaponSetting.DispersionWeapon.Walk_StateDispersionReduction;
 		break;
 	case EMovementState::Run_State:
 		WeaponAiming = false;
-		CurrentDispersionMax = WeaponSetting.DispesionWeapon.Run_StateDispersionAimMax;
-		CurrentDispersionMin = WeaponSetting.DispesionWeapon.Run_StateDispersionAimMin;
-		CurrentDispersionRecoil = WeaponSetting.DispesionWeapon.Run_StateDispersionAimRecoil;
-		CurrentDispersionReduction = WeaponSetting.DispesionWeapon.Run_StateDispersionReduction;
+		CurrentDispersionMax = WeaponSetting.DispersionWeapon.Run_StateDispersionAimMax;
+		CurrentDispersionMin = WeaponSetting.DispersionWeapon.Run_StateDispersionAimMin;
+		CurrentDispersionRecoil = WeaponSetting.DispersionWeapon.Run_StateDispersionAimRecoil;
+		CurrentDispersionReduction = WeaponSetting.DispersionWeapon.Run_StateDispersionReduction;
 		break;
 	case EMovementState::Sprint_State:
 		WeaponAiming = false;
@@ -396,10 +396,10 @@ void AWeaponDefault::InitReload()
 		AnimWeaponStart_Multicast(AnimWeaponPlay);
 	}
 
-	if (WeaponSetting.MagasinDrop.DropMesh)
+	if (WeaponSetting.MagazineDrop.DropMesh)
 	{
 		GetWorldTimerManager().SetTimer(DropMagazineTimerHandle, this, &AWeaponDefault::DropMagazine, 
-			WeaponSetting.MagasinDrop.DropTime, false);
+			WeaponSetting.MagazineDrop.DropTime, false);
 	}
 }
 
@@ -407,14 +407,14 @@ void AWeaponDefault::FinishReload()
 {
 	WeaponReloading = false;
 	
-	int8 AviableAmmoFromInventory = GetAviableAmmoForReload();
+	int8 AvailableAmmoFromInventory = GetAvailableAmmoForReload();
 	int8 AmmoNeedTakeFromInventory;
 	int8 NeedToReload = WeaponSetting.MaxRound - AdditionalWeaponInfo.Round;
 
-	if (NeedToReload > AviableAmmoFromInventory)
+	if (NeedToReload > AvailableAmmoFromInventory)
 	{
-		AdditionalWeaponInfo.Round += AviableAmmoFromInventory;
-		AmmoNeedTakeFromInventory = AviableAmmoFromInventory;
+		AdditionalWeaponInfo.Round += AvailableAmmoFromInventory;
+		AmmoNeedTakeFromInventory = AvailableAmmoFromInventory;
 	}
 	else
 	{
@@ -441,56 +441,56 @@ void AWeaponDefault::CancelReload()
 
 bool AWeaponDefault::CheckCanWeaponReload()
 {
-	bool result = true; 
+	bool Result = true; 
 	if (GetOwner())
 	{
-		UTDSInventoryComponent* myInv = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
-		if (myInv)
+		UTDSInventoryComponent* Inventory = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
+		if (Inventory)
 		{
-			int8 AviableAmmoForWeapon;
-			if (!myInv->CheckAmmoForWeapon(WeaponSetting.WeaponType, AviableAmmoForWeapon))
+			int8 AvailableAmmoForWeapon;
+			if (!Inventory->CheckAmmoForWeapon(WeaponSetting.WeaponType, AvailableAmmoForWeapon))
 			{
-				result = false;
-				myInv->OnWeaponNotHaveRound.Broadcast(myInv->GetWeaponIndexSlotByName(IdWeaponName));
+				Result = false;
+				Inventory->OnWeaponNotHaveRound.Broadcast(Inventory->GetWeaponIndexSlotByName(IdWeaponName));
 
 			}
 			else
 			{
-				myInv->OnWeaponHaveRound.Broadcast(myInv->GetWeaponIndexSlotByName(IdWeaponName));
+				Inventory->OnWeaponHaveRound.Broadcast(Inventory->GetWeaponIndexSlotByName(IdWeaponName));
 			}
 		}
 	}
-	return result;
+	return Result;
 }
 
-int8 AWeaponDefault::GetAviableAmmoForReload()
+int8 AWeaponDefault::GetAvailableAmmoForReload()
 {
-	int8 AviableAmmoForWeapon = WeaponSetting.MaxRound;
+	int8 AvailableAmmoForWeapon = WeaponSetting.MaxRound;
 	if (GetOwner())
 	{
-		UTDSInventoryComponent* myInv = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
-		if (myInv)
+		UTDSInventoryComponent* Inventory = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
+		if (Inventory)
 		{
-			if (myInv->CheckAmmoForWeapon(WeaponSetting.WeaponType, AviableAmmoForWeapon))
+			if (Inventory->CheckAmmoForWeapon(WeaponSetting.WeaponType, AvailableAmmoForWeapon))
 			{
-				AviableAmmoForWeapon = AviableAmmoForWeapon;
+				AvailableAmmoForWeapon = AvailableAmmoForWeapon;
 			}
 		}
 	}
-	return AviableAmmoForWeapon;
+	return AvailableAmmoForWeapon;
 }
 
 void AWeaponDefault::DropMagazine()
 {
 	InitDropMesh_OnServer(
-		WeaponSetting.MagasinDrop.DropMesh, 
-		WeaponSetting.MagasinDrop.DropMeshOffset, 
-		WeaponSetting.MagasinDrop.DropMeshImpulseDirection, 
-		WeaponSetting.MagasinDrop.DropTime, 
-		WeaponSetting.MagasinDrop.DropMeshLifeTime, 
-		WeaponSetting.MagasinDrop.MassMesh, 
-		WeaponSetting.MagasinDrop.PowerImpulse, 
-		WeaponSetting.MagasinDrop.ImpulseRandomDispersion);
+		WeaponSetting.MagazineDrop.DropMesh, 
+		WeaponSetting.MagazineDrop.DropMeshOffset, 
+		WeaponSetting.MagazineDrop.DropMeshImpulseDirection, 
+		WeaponSetting.MagazineDrop.DropTime, 
+		WeaponSetting.MagazineDrop.DropMeshLifeTime, 
+		WeaponSetting.MagazineDrop.MassMesh, 
+		WeaponSetting.MagazineDrop.PowerImpulse, 
+		WeaponSetting.MagazineDrop.ImpulseRandomDispersion);
 }
 
 void AWeaponDefault::DropShell()

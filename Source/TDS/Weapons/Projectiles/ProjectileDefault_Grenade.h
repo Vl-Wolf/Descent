@@ -22,26 +22,29 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 
-	void TimerExplose(float DeltaTime);
+	void TimerExplode(float DeltaTime);
 
 	virtual void BulletCollisionSphereHit(class UPrimitiveComponent* HitComp, AActor* OtherActor, UPrimitiveComponent* OtherComp, FVector NormalImpulse, const FHitResult& Hit) override;
 
 	virtual void ImpactProjectile() override;
 
 	UFUNCTION(Server, Reliable)
-	void Explose_OnServer();
+	void Explode_OnServer();
 
 	UFUNCTION(NetMulticast, Reliable)
-		void SpawnExploseFX_Multicast(UParticleSystem* FXTemplate);
+	void SpawnExplodeFX_Multicast(UParticleSystem* FXTemplate);
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void SpawnExploseSound_Multicast(USoundBase* ExploseSound);
+	void SpawnExplodeSound_Multicast(USoundBase* ExplodeSound);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenade")
 	bool TimerEnabled = false;
-	float TimerToExplose = 0.0f;
+	
+	float TimerToExplode = 0.0f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Grenade")
-	float TimeToExplose = 5.0f;
+	float TimeToExplode = 5.0f;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		bool ShowDebug = false;
+	bool ShowDebug = false;
 };

@@ -11,16 +11,6 @@ UTDSHealthComponent::UTDSHealthComponent()
 	SetIsReplicatedByDefault(true);
 }
 
-void UTDSHealthComponent::BeginPlay()
-{
-	Super::BeginPlay();
-}
-
-void UTDSHealthComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
-
 float UTDSHealthComponent::GetCurrentHealth()
 {
 	return Health;
@@ -41,12 +31,11 @@ void UTDSHealthComponent::ChangeHealthValue_OnServer_Implementation(float Change
 
 	if (bIsAlive)
 	{
-		ChangeValue = ChangeValue * CoefDamage;
+		ChangeValue = ChangeValue * CoefficientDamage;
 
 		Health += ChangeValue;
 
 		HealthChangeEvent_Multicast(Health, ChangeValue);
-		//OnHealthChange.Broadcast(Health, ChangeValue);
 
 		if (Health > 100.0f)
 		{
@@ -58,7 +47,6 @@ void UTDSHealthComponent::ChangeHealthValue_OnServer_Implementation(float Change
 			{
 				bIsAlive = false;
 				DeadEvent_Multicast();
-				//OnDead.Broadcast();
 			}
 		}
 	}

@@ -24,13 +24,14 @@ public:
 	virtual void DestroyObject();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-		TArray<TEnumAsByte<EPhysicalSurface>> PossibleInteractSurface;
+	TArray<TEnumAsByte<EPhysicalSurface>> PossibleInteractSurface;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting")
-		bool bIsStakable = false;
+	bool bIsStackable = false;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting Execute Timer")
-		UParticleSystem* ParticleEffect = nullptr;
+	UParticleSystem* ParticleEffect = nullptr;
+	
 	UParticleSystemComponent* ParticleEmitter = nullptr;
 
 	AActor* myActor = nullptr;
@@ -98,7 +99,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect Damage")
 		TSubclassOf<UTDS_StateEffect> Effect = nullptr;
 
-	//не работает исправить!!!
+	//пїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ пїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅпїЅ!!!
 	UParticleSystem* ParticleEffectAoE = ParticleEffect;
 	UParticleSystemComponent* ParticleEmitterAoE = ParticleEmitter;
 };

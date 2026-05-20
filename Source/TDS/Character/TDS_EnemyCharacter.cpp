@@ -7,33 +7,25 @@
 #include "Engine/ActorChannel.h"
 #include "Kismet/GameplayStatics.h"
 
-// Sets default values
 ATDS_EnemyCharacter::ATDS_EnemyCharacter()
 {
- 	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-
 }
 
-// Called when the game starts or when spawned
 void ATDS_EnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
 }
 
-// Called every frame
 void ATDS_EnemyCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
 }
 
-// Called to bind functionality to input
 void ATDS_EnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
-
 }
 
 void ATDS_EnemyCharacter::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect)
@@ -75,15 +67,15 @@ void ATDS_EnemyCharacter::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd)
 		if (Effect && Effect->ParticleEffect)
 		{
 			FName NameBoneToAttached = Effect->NameBone;
-			FVector Loc = FVector(0);
+			FVector Location = FVector(0);
 
-			USkeletalMeshComponent* myMesh = GetMesh();
+			USkeletalMeshComponent* CharacterMesh = GetMesh();
 
-			if (myMesh)
+			if (CharacterMesh)
 			{
-				UParticleSystemComponent* newParticleSystem = UGameplayStatics::UGameplayStatics::SpawnEmitterAttached(Effect->ParticleEffect, myMesh,
-					NameBoneToAttached, Loc, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-				ParticleSystemEffects.Add(newParticleSystem);
+				UParticleSystemComponent* NewParticleSystem = UGameplayStatics::UGameplayStatics::SpawnEmitterAttached(Effect->ParticleEffect, CharacterMesh,
+					NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
+				ParticleSystemEffects.Add(NewParticleSystem);
 			}
 		}
 	}

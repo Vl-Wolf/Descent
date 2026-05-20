@@ -23,23 +23,15 @@ public:
 	
 	UPROPERTY(BlueprintAssignable, EditAnywhere, BlueprintReadWrite, Category = "Health")
 	FOnDead OnDead;
-
-
-	// Called when the game starts
-	virtual void BeginPlay() override;
-
+	
 	UPROPERTY(Replicated)
 	float Health = 100.0f;
 	
 	UPROPERTY(Replicated)
 	bool bIsAlive = true;
 
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Health")
-	float CoefDamage = 1.0f;
+	float CoefficientDamage = 1.0f;
 
 	UFUNCTION(BlueprintCallable, Category = "Health")
 	float GetCurrentHealth();
@@ -54,7 +46,7 @@ public:
 	virtual	void ChangeHealthValue_OnServer(float ChangeValue);
 	
 	UFUNCTION(NetMulticast, Reliable)
-	void HealthChangeEvent_Multicast(float newHealth, float value);
+	void HealthChangeEvent_Multicast(float NewHealth, float Value);
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void DeadEvent_Multicast();
