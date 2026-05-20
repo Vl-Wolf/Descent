@@ -220,74 +220,67 @@ void ATDSCharacter::InputAimReleased()
 
 void ATDSCharacter::MovementTick(float DeltaTime)
 {
-	if (HealthComponent && HealthComponent->GetIsAlive())
+	if (!HealthComponent || !HealthComponent->GetIsAlive())
+		return;
+	
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+	if (!PlayerController || !PlayerController->IsLocalController())
+		return;
+	
+	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), AxisX);
+	AddMovementInput(FVector(0.0f, 1.0f, 0.0f), AxisY);
+	
+	if (MovementState == EMovementState::Sprint_State)
 	{
+		FVector RotationVector = FVector(AxisX, AxisY, 0.0f);
+		FRotator Rotator = RotationVector.ToOrientationRotator();
 
-		if (GetController() && GetController()->IsLocalController())
+		SetActorRotation(FQuat(Rotator));
+		SetActorRotationByYaw_OnServer(Rotator.Yaw);
+	}
+	else
+	{
+		
+		FHitResult ResultHit;
+		PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
+		float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
+
+		SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
+		SetActorRotationByYaw_OnServer(FindRotatorResultYaw);
+
+		if (CurrentWeapon)
 		{
-			AddMovementInput(FVector(1.0f, 0.0f, 0.0f), AxisX);
-			AddMovementInput(FVector(0.0f, 1.0f, 0.0f), AxisY);
-
-			/*FString SEnum = UEnum::GetValueAsString(GetMovementState());
-
-			UE_LOG(LogTDS_Net, Warning, TEXT("Movement state - %s"), *SEnum); */ 
-
-			if (MovementState == EMovementState::Sprint_State)
+			FVector Displacement = FVector(0);
+			bool bIsReduceDispersion = false;
+			switch (MovementState)
 			{
-				FVector myRotationVector = FVector(AxisX, AxisY, 0.0f);
-				FRotator myRotator = myRotationVector.ToOrientationRotator();
-
-				SetActorRotation(FQuat(myRotator));
-				SetActorRotationByYaw_OnServer(myRotator.Yaw);
+			case EMovementState::Aim_State:
+				Displacement = FVector(0.0f, 0.0f, 160.0f);
+				//CurrentWeapon->ShouldReduceDispersion = true;
+				bIsReduceDispersion = true;
+				break;
+			case EMovementState::AimWalk_State:
+				Displacement = FVector(0.0f, 0.0f, 160.0f);
+				//CurrentWeapon->ShouldReduceDispersion = true;
+				bIsReduceDispersion = true;
+				break;
+			case EMovementState::Walk_State:
+				Displacement = FVector(0.0f, 0.0f, 120.0f);
+				//CurrentWeapon->ShouldReduceDispersion = false;
+				break;
+			case EMovementState::Run_State:
+				Displacement = FVector(0.0f, 0.0f, 120.0f);
+				//CurrentWeapon->ShouldReduceDispersion = false;
+				break;
+			case EMovementState::Sprint_State:
+				break;
+			default:
+				break;
 			}
-			else
-			{
-				APlayerController* myController = UGameplayStatics::GetPlayerController(GetWorld(), 0);
-				if (myController)
-				{
-					FHitResult ResultHit;
-					myController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
-					float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
 
-					SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
-					SetActorRotationByYaw_OnServer(FindRotatorResultYaw);
-
-					if (CurrentWeapon)
-					{
-						FVector Displacement = FVector(0);
-						bool bIsReduceDispersion = false;
-						switch (MovementState)
-						{
-						case EMovementState::Aim_State:
-							Displacement = FVector(0.0f, 0.0f, 160.0f);
-							//CurrentWeapon->ShouldReduceDispersion = true;
-							bIsReduceDispersion = true;
-							break;
-						case EMovementState::AimWalk_State:
-							Displacement = FVector(0.0f, 0.0f, 160.0f);
-							//CurrentWeapon->ShouldReduceDispersion = true;
-							bIsReduceDispersion = true;
-							break;
-						case EMovementState::Walk_State:
-							Displacement = FVector(0.0f, 0.0f, 120.0f);
-							//CurrentWeapon->ShouldReduceDispersion = false;
-							break;
-						case EMovementState::Run_State:
-							Displacement = FVector(0.0f, 0.0f, 120.0f);
-							//CurrentWeapon->ShouldReduceDispersion = false;
-							break;
-						case EMovementState::Sprint_State:
-							break;
-						default:
-							break;
-						}
-
-						//CurrentWeapon->ShootEndLocation = ResultHit.Location + Displacement;
-						CurrentWeapon->UpdateWeaponByCharacterMovementState_OnServer(ResultHit.Location + Displacement, bIsReduceDispersion);
-					}
-				}
-			}
-		}	
+			//CurrentWeapon->ShootEndLocation = ResultHit.Location + Displacement;
+			CurrentWeapon->UpdateWeaponByCharacterMovementState_OnServer(ResultHit.Location + Displacement, bIsReduceDispersion);
+		}
 	}
 }
 
