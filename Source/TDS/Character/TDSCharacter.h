@@ -46,6 +46,9 @@ protected:
 
 	//Ability Inputs
 	void TryAbilityEnabled();
+	
+	UFUNCTION(Server, Reliable)
+	void TryAbilityEnabled_OnServer();	
 
 	template<int32 Id>
 	void TKeyPressed()

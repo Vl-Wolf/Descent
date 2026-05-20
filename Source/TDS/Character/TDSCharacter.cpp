@@ -618,14 +618,18 @@ void ATDSCharacter::TrySwitchPreviousWeapon()
 
 void ATDSCharacter::TryAbilityEnabled()
 {
-	if (AbilityEffect)
-	{
-		UTDS_StateEffect* newEffect = NewObject<UTDS_StateEffect>(this, AbilityEffect);
-		if (newEffect)
-		{
-			newEffect->InitObject(this, NAME_None);
-		}
-	}
+	TryAbilityEnabled_OnServer();
+}
+
+void ATDSCharacter::TryAbilityEnabled_OnServer_Implementation()
+{
+	if (!AbilityEffect)
+		return;
+	
+	UTDS_StateEffect* NewEffect = NewObject<UTDS_StateEffect>(this, AbilityEffect);
+	if (NewEffect)
+		NewEffect->InitObject(this, NAME_None);
+	
 }
 
 EPhysicalSurface ATDSCharacter::GetSurfaceType()
