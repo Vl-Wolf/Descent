@@ -500,26 +500,20 @@ void ATDSCharacter::WeaponReloadEnd(bool bIsSuccess, int32 AmmoTake)
 
 void ATDSCharacter::TrySwitchWeaponToIndexByKeyInput_OnServer_Implementation(int32 ToIndex)
 {
-	bool bIsSucces = false;
-	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.IsValidIndex(ToIndex))
-	{
-		if (CurrentIndexWeapon != ToIndex && InventoryComponent)
-		{
-			int32 OldIndex = CurrentIndexWeapon;
-			FAdditionalWeaponInfo OldInfo;
+	if (!CurrentWeapon || !InventoryComponent->WeaponSlots.IsValidIndex(ToIndex))
+		return;
+	
+	if (CurrentIndexWeapon == ToIndex)
+		return;
+	
+	int32 OldIndex = CurrentIndexWeapon;
 
-			if (CurrentWeapon)
-			{
-				OldInfo = CurrentWeapon->AdditionalWeaponInfo;
-				if (CurrentWeapon->WeaponReloading)
-				{
-					CurrentWeapon->CancelReload();
-				}
-			}
-			
-			bIsSucces = InventoryComponent->SwitchWeaponByIndex(ToIndex, OldIndex, OldInfo);
-		}
-	}
+	FAdditionalWeaponInfo OldInfo = CurrentWeapon->AdditionalWeaponInfo;
+	
+	if (CurrentWeapon->WeaponReloading)
+		CurrentWeapon->CancelReload();
+	
+	InventoryComponent->SwitchWeaponByIndex(ToIndex, OldIndex, OldInfo);
 }
 
 void ATDSCharacter::DropCurrentWeapon()
