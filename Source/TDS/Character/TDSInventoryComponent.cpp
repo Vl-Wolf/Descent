@@ -286,27 +286,14 @@ bool UTDSInventoryComponent::SwitchWeaponByIndex(int32 IndexWeaponToChange, int3
 
 FAdditionalWeaponInfo UTDSInventoryComponent::GetAdditionalInfoWeapon(int32 IndexWeapon)
 {
-	FAdditionalWeaponInfo result;
-	if (WeaponSlots.IsValidIndex(IndexWeapon))
+	//FAdditionalWeaponInfo result;
+	if (!WeaponSlots.IsValidIndex(IndexWeapon))
 	{
-		bool bIsFind = false;
-		int8 i = 0;
-		while (i < WeaponSlots.Num() && !bIsFind)
-		{
-			if (i == IndexWeapon)
-			{
-				result = WeaponSlots[i].AdditionalInfo;
-				bIsFind = true;
-			}
-			i++;
-		}
-		if (!bIsFind)
-			UE_LOG(LogTemp, Warning, TEXT("UTDSInventoryComponent::SetAdditionalInfoWeapon - No Found Weapon with index - %d"), IndexWeapon);
+		UE_LOG(LogTemp, Warning, TEXT("UTDSInventoryComponent::GetAdditionalInfoWeapon - Invalid index - %d"), IndexWeapon);
+		return FAdditionalWeaponInfo{};
 	}
-	else
-		UE_LOG(LogTemp, Warning, TEXT("UTDSInventoryComponent::SetAdditionalInfoWeapon - Not Correct index Weapon - %d"), IndexWeapon);
 
-	return result;
+	return WeaponSlots[IndexWeapon].AdditionalInfo;
 }
 
 int32 UTDSInventoryComponent::GetWeaponIndexSlotByName(FName IdWeaponName)
@@ -376,27 +363,15 @@ bool UTDSInventoryComponent::GetWeaponTypeByNameWeapon(FName IdWeaponName, EWeap
 
 void UTDSInventoryComponent::SetAdditionalInfoWeapon(int32 IndexWeapon, FAdditionalWeaponInfo NewInfo)
 {
-	if (WeaponSlots.IsValidIndex(IndexWeapon))
+	if (!WeaponSlots.IsValidIndex(IndexWeapon))
 	{
-		bool bIsFind = false;
-		int8 i = 0;
-		while (i < WeaponSlots.Num() && !bIsFind)
-		{
-			if (i == IndexWeapon)
-			{
-				WeaponSlots[i].AdditionalInfo = NewInfo;
-				bIsFind = true;
-
-				WeaponAdditionalInfoChangeEvent_Multicast(IndexWeapon, NewInfo);
-				//OnWeaponAdditionalInfoChange.Broadcast(IndexWeapon, NewInfo);
-			}
-			i++;
-		}
-		if (!bIsFind)
-			UE_LOG(LogTemp, Warning, TEXT("UTDSInventoryComponent::SetAdditionalInfoWeapon - Not Found Weapon with index - %d"), IndexWeapon);
+		UE_LOG(LogTemp, Warning, TEXT("UTDSInventoryComponent::SetAdditionalInfoWeapon - Invalid index - %d"), IndexWeapon);
+		return;
 	}
-	else
-		UE_LOG(LogTemp, Warning, TEXT("UTDSInventoryComponent::SetAdditionalInfoWeapon - Not Correct index Weapon - %d"), IndexWeapon);
+	
+	WeaponSlots[IndexWeapon].AdditionalInfo = NewInfo;
+	WeaponAdditionalInfoChangeEvent_Multicast(IndexWeapon, NewInfo);
+
 }
 
 void UTDSInventoryComponent::AmmoSlotChangeValue(EWeaponType TypeWeapon, int32 CoutChangeAmmo)
