@@ -6,9 +6,7 @@
 #include "TDS/Character/TDSHealthComponent.h"
 #include "TDSCharacterHealthComponent.generated.h"
 
-/**
- * 
- */
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnShieldChange, float, Shield, float, Damage);
 
 UCLASS()
@@ -19,19 +17,21 @@ class TDS_API UTDSCharacterHealthComponent : public UTDSHealthComponent
 public:
 
 	UPROPERTY(BlueprintAssignable, EditAnywhere, BlueprintReadWrite, Category = "Shield")
-		FOnShieldChange OnShieldChange;
+	FOnShieldChange OnShieldChange;
 
 	FTimerHandle TimerHandle_CoolDownShieldTimer;
 	FTimerHandle TimerHandle_ShieldRecoveryRateTimer;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Shield")
-		float CoolDownShieldRecoveryTime = 5.0f;
+	float CoolDownShieldRecoveryTime = 5.0f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Shield")
-		float ShieldRecoveryValue = 1.0f;
+	float ShieldRecoveryValue = 1.0f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Shield")
-		float ShieldRecoveryRate = 0.1f;
+	float ShieldRecoveryRate = 0.1f;
 
-protected:
+
 
 	float Shield = 100.0f;
 
@@ -45,8 +45,8 @@ public:
 	void RecoveryShield();
 
 	UFUNCTION(BlueprintCallable)
-		float GetShieldValue();
+	float GetShieldValue();
 	
 	UFUNCTION(NetMulticast, Reliable)
-		void ShieldChangeEvent_Multicast(float newShield, float Damage);
+	void ShieldChangeEvent_Multicast(float newShield, float Damage);
 };

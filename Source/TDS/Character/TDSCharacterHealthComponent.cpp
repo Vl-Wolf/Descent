@@ -5,14 +5,14 @@
 
 void UTDSCharacterHealthComponent::ChangeHealthValue_OnServer(float ChangeValue)
 {
-	float CurrentDamage = ChangeValue * CoefDamage;
-
 	if (Shield > 0.0f && ChangeValue < 0.0f)
 	{
+		const float OverflowDamage = Shield + ChangeValue;
+		
 		ChangeShieldValue(ChangeValue);
-		if (Shield < 0.0f)
+		if (Shield <= 0.0f)
 		{
-			//fx
+			Super::ChangeHealthValue_OnServer(OverflowDamage);
 		}
 	}
 	else
