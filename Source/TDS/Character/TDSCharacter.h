@@ -42,7 +42,7 @@ protected:
 
 	//Inventory Inputs
 	void TrySwitchNextWeapon();
-	void TrySwitchPreviosWeapon();
+	void TrySwitchPreviousWeapon();
 
 	//Ability Inputs
 	void TryAbilityEnabled();
@@ -64,31 +64,38 @@ protected:
 
 	UPROPERTY(Replicated)
 	EMovementState MovementState = EMovementState::Run_State;
+	
 	UPROPERTY(Replicated)
 	AWeaponDefault* CurrentWeapon = nullptr;
 
+	UPROPERTY()
 	UDecalComponent* CurrentCursor = nullptr;
 
 	UPROPERTY(Replicated)
-		TArray<UTDS_StateEffect*> Effects;
+	TArray<UTDS_StateEffect*> Effects;
+	
 	UPROPERTY(ReplicatedUsing = EffectAdd_OnRep)
-		UTDS_StateEffect* EffectAdd = nullptr;
+	UTDS_StateEffect* EffectAdd = nullptr;
+	
 	UPROPERTY(ReplicatedUsing = EffectRemove_OnRep)
-		UTDS_StateEffect* EffectRemove = nullptr;
+	UTDS_StateEffect* EffectRemove = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		TArray<UParticleSystemComponent*> ParticleSystemEffects;
+	TArray<UParticleSystemComponent*> ParticleSystemEffects;
 
 	UPROPERTY(Replicated)
 	int32 CurrentIndexWeapon = 0;
 
 	UFUNCTION()
 	void CharacterDead();
+	
 	UFUNCTION(NetMulticast, Reliable)
 	void EnableRagdoll_Multicast();
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	
 public:
+	
 	ATDSCharacter();
 
 	FTimerHandle TimerHandle_RagDollTimer;
@@ -104,24 +111,27 @@ public:
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
-		class UTDSInventoryComponent* InventoryComponent;
+	class UTDSInventoryComponent* InventoryComponent;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
-		class UTDSCharacterHealthComponent* HealthComponent;
+	class UTDSCharacterHealthComponent* HealthComponent;
 
 	//Cursor material on decal
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
-		UMaterialInterface* CursorMaterial = nullptr;
+	UMaterialInterface* CursorMaterial = nullptr;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
-		FVector CursorSize = FVector(20.0f, 40.0f, 40.0f);
-	//Default move rule and state charecter
+	FVector CursorSize = FVector(20.0f, 40.0f, 40.0f);
+	
+	//Default move rule and state character
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
-		FCharacterSpeed MovementInfo;
+	FCharacterSpeed MovementInfo;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Death")
-		TArray<UAnimMontage*> DeadsAnim;
+	TArray<UAnimMontage*> DeadsAnim;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Ability")
-		TSubclassOf<UTDS_StateEffect> AbilityEffect;
+	TSubclassOf<UTDS_StateEffect> AbilityEffect;
 
 private:
 
@@ -137,7 +147,7 @@ public:
 
 	//Tick func Start
 	UFUNCTION()
-		void MovementTick(float DeltaTime);
+	void MovementTick(float DeltaTime);
 	//Tick func End
 
 	//Func
@@ -148,39 +158,50 @@ public:
 
 		
 	UFUNCTION()
-		void InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon);
+	void InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon);
+	
 	void TryReloadWeapon();
 
 	UFUNCTION()
-		void WeaponFire(UAnimMontage* Anim);
+	void WeaponFire(UAnimMontage* Anim);
+	
 	UFUNCTION()
-		void WeaponReloadStart(UAnimMontage* Anim);
+	void WeaponReloadStart(UAnimMontage* Anim);
+	
 	UFUNCTION()
-		void WeaponReloadEnd(bool bIsSuccess, int32 AmmoSafe);
+	void WeaponReloadEnd(bool bIsSuccess, int32 AmmoSafe);
 	//
 	UFUNCTION(Server, Reliable)
-		void TrySwitchWeaponToIndexByKeyInput_OnServer(int32 ToIndex);
-	void DropCurrenWeapon();
+	void TrySwitchWeaponToIndexByKeyInput_OnServer(int32 ToIndex);
+	
+	void DropCurrentWeapon();
 
 	UFUNCTION(BlueprintNativeEvent)
-		void WeaponReloadStart_BP(UAnimMontage* Anim);
+	void WeaponReloadStart_BP(UAnimMontage* Anim);
+	
 	UFUNCTION(BlueprintNativeEvent)
-		void WeaponReloadEnd_BP(bool bIsSuccess);
+	void WeaponReloadEnd_BP(bool bIsSuccess);
+	
 	UFUNCTION(BlueprintNativeEvent)
-		void WeaponFire_BP(UAnimMontage* Anim);
+	void WeaponFire_BP(UAnimMontage* Anim);
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		AWeaponDefault* GetCurrentWeapon();
+	AWeaponDefault* GetCurrentWeapon();
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		UDecalComponent* GetCursorToWorld();
+	UDecalComponent* GetCursorToWorld();
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		EMovementState GetMovementState();
+	EMovementState GetMovementState();
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		TArray<UTDS_StateEffect*> GetCurrentEffectsOnChar();
+	TArray<UTDS_StateEffect*> GetCurrentEffectsOnChar();
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		int32 GetCurrentWeaponIndex();
+	int32 GetCurrentWeaponIndex();
+	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
-		bool GetIsAlive();
+	bool GetIsAlive();
 
 	/*UFUNCTION(BlueprintCallable, BlueprintPure)
 		void RemoveCurrentWeapon();*/
@@ -188,38 +209,48 @@ public:
 	
 	//Interface
 	EPhysicalSurface GetSurfaceType() override;
+	
 	TArray<UTDS_StateEffect*> GetAllCurrentEffects() override;
+	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-		void RemoveEffect(UTDS_StateEffect* RemoveEffect);
+	void RemoveEffect(UTDS_StateEffect* RemoveEffect);
+	
 	void RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect) override;
+	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-		void AddEffect(UTDS_StateEffect* newEffect);
-	void AddEffect_Implementation(UTDS_StateEffect* newEffect) override;
+	void AddEffect(UTDS_StateEffect* NewEffect);
+	
+	void AddEffect_Implementation(UTDS_StateEffect* NewEffect) override;
 	//Interface End
 
 	UFUNCTION(BlueprintNativeEvent)
-		void CharacterDead_BP();
+	void CharacterDead_BP();
 
 	UFUNCTION(Server, Unreliable)
-		void SetActorRotationByYaw_OnServer(float Yaw);
+	void SetActorRotationByYaw_OnServer(float Yaw);
+	
 	UFUNCTION(NetMulticast, Unreliable)
-		void SetActorRotationByYaw_Multicast(float Yaw);
+	void SetActorRotationByYaw_Multicast(float Yaw);
 
 	UFUNCTION(Server, Reliable)
-		void SetMovementState_OnServer(EMovementState NewState);
+	void SetMovementState_OnServer(EMovementState NewState);
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void SetMovementState_Multicast(EMovementState NewState);
+	void SetMovementState_Multicast(EMovementState NewState);
+	
 	UFUNCTION(Server, Reliable)
-		void TryReloadWeapon_OnServer();
+	void TryReloadWeapon_OnServer();
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void PlayAnim_Multicast(UAnimMontage* Anim);
+	void PlayAnim_Multicast(UAnimMontage* Anim);
 
 	UFUNCTION()
-		void EffectAdd_OnRep();
+	void EffectAdd_OnRep();
+	
 	UFUNCTION()
-		void EffectRemove_OnRep();
+	void EffectRemove_OnRep();
 
 	UFUNCTION()
-		void SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd);
+	void SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd);
 };
 

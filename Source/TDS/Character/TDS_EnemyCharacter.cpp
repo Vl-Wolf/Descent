@@ -44,12 +44,12 @@ void ATDS_EnemyCharacter::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEf
 	EffectRemove = RemoveEffect;
 }
 
-void ATDS_EnemyCharacter::AddEffect_Implementation(UTDS_StateEffect* newEffect)
+void ATDS_EnemyCharacter::AddEffect_Implementation(UTDS_StateEffect* NewEffect)
 {
-	Effects.Add(newEffect);
+	Effects.Add(NewEffect);
 
-	SwitchEffect(newEffect, true);
-	EffectAdd = newEffect;
+	SwitchEffect(NewEffect, true);
+	EffectAdd = NewEffect;
 }
 
 void ATDS_EnemyCharacter::EffectAdd_OnRep()
@@ -93,7 +93,7 @@ void ATDS_EnemyCharacter::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd)
 		bool bIsFind = false;
 		if (ParticleSystemEffects.Num() > 0)
 		{
-			while (i < ParticleSystemEffects.Num(), !bIsFind)
+			while (i < ParticleSystemEffects.Num() && !bIsFind)
 			{
 				if (ParticleSystemEffects[i]->Template && Effect->ParticleEffect && Effect->ParticleEffect == ParticleSystemEffects[i]->Template)
 				{

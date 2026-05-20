@@ -31,29 +31,34 @@ public:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-		void RemoveEffect(UTDS_StateEffect* RemoveEffect);
+	void RemoveEffect(UTDS_StateEffect* RemoveEffect);
+	
 	void RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect) override;
+	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-		void AddEffect(UTDS_StateEffect* newEffect);
-	void AddEffect_Implementation(UTDS_StateEffect* newEffect) override;
+	void AddEffect(UTDS_StateEffect* NewEffect);
+	
+	void AddEffect_Implementation(UTDS_StateEffect* NewEffect) override;
 
 
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Setting")
-		TArray<UTDS_StateEffect*> Effects;
+	TArray<UTDS_StateEffect*> Effects;
+	
 	UPROPERTY(ReplicatedUsing = EffectAdd_OnRep)
-		UTDS_StateEffect* EffectAdd = nullptr;
+	UTDS_StateEffect* EffectAdd = nullptr;
+	
 	UPROPERTY(ReplicatedUsing = EffectRemove_OnRep)
-		UTDS_StateEffect* EffectRemove = nullptr;
+	UTDS_StateEffect* EffectRemove = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		TArray<UParticleSystemComponent*> ParticleSystemEffects;
+	TArray<UParticleSystemComponent*> ParticleSystemEffects;
 
 	UFUNCTION()
-		void EffectAdd_OnRep();
-	UFUNCTION()
-		void EffectRemove_OnRep();
-	UFUNCTION()
-		void SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd);
+	void EffectAdd_OnRep();
 	
-
+	UFUNCTION()
+	void EffectRemove_OnRep();
+	
+	UFUNCTION()
+	void SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd);
 };

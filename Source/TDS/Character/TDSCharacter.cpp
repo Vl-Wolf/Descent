@@ -128,11 +128,11 @@ void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* NewInputComponent
 	NewInputComponent->BindAction(TEXT("ReloadEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::TryReloadWeapon);
 
 	NewInputComponent->BindAction(TEXT("SwitchNextWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchNextWeapon);
-	NewInputComponent->BindAction(TEXT("SwitchPreviosWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchPreviosWeapon);
+	NewInputComponent->BindAction(TEXT("SwitchPreviosWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchPreviousWeapon);
 
 	NewInputComponent->BindAction(TEXT("AbilityAction"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TryAbilityEnabled);
 
-	NewInputComponent->BindAction(TEXT("DropCurrentWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::DropCurrenWeapon);
+	NewInputComponent->BindAction(TEXT("DropCurrentWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::DropCurrentWeapon);
 
 	TArray<FKey> HotKeys;
 	HotKeys.Add(EKeys::One);
@@ -529,7 +529,7 @@ void ATDSCharacter::TrySwitchWeaponToIndexByKeyInput_OnServer_Implementation(int
 	}
 }
 
-void ATDSCharacter::DropCurrenWeapon()
+void ATDSCharacter::DropCurrentWeapon()
 {
 	if (InventoryComponent)
 	{
@@ -592,7 +592,7 @@ void ATDSCharacter::TrySwitchNextWeapon()
 	}
 }
 
-void ATDSCharacter::TrySwitchPreviosWeapon()
+void ATDSCharacter::TrySwitchPreviousWeapon()
 {
 	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.Num() > 1)
 	{
@@ -662,16 +662,22 @@ void ATDSCharacter::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect)
 	EffectRemove = RemoveEffect;
 }
 
-void ATDSCharacter::AddEffect_Implementation(UTDS_StateEffect* newEffect)
+void ATDSCharacter::AddEffect_Implementation(UTDS_StateEffect* NewEffect)
 {
-	Effects.Add(newEffect);
+	if (Effects.Contains(NewEffect))
+		return;
+	
+	Effects.Add(NewEffect);
 
-	SwitchEffect(newEffect, true);
-	EffectAdd = newEffect;
+	SwitchEffect(NewEffect, true);
+	EffectAdd = NewEffect;
 }
 
 void ATDSCharacter::TryReloadWeapon_OnServer_Implementation()
-{
+{	
+	if (!CurrentWeapon)
+		return;
+	
 	if (CurrentWeapon->GetWeaponRound() < CurrentWeapon->WeaponSetting.MaxRound && CurrentWeapon->CheckCanWeaponReload())
 	{
 		CurrentWeapon->InitReload();
@@ -849,7 +855,7 @@ void ATDSCharacter::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd)
 		bool bIsFind = false;
 		if (ParticleSystemEffects.Num() > 0)
 		{
-			while (i < ParticleSystemEffects.Num(), !bIsFind)
+			while (i < ParticleSystemEffects.Num() && !bIsFind)
 			{
 				if (ParticleSystemEffects[i]->Template && Effect->ParticleEffect && Effect->ParticleEffect == ParticleSystemEffects[i]->Template)
 				{
