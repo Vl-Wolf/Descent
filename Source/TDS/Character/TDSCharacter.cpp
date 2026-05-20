@@ -8,7 +8,6 @@
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
-#include "HeadMountedDisplayFunctionLibrary.h"
 #include "Materials/Material.h"
 #include "Kismet/GameplayStatics.h"
 #include "Kismet/KismetMathLibrary.h"
@@ -443,7 +442,7 @@ void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponA
 					myWeapon->IdWeaponName = IdWeaponName;
 					myWeapon->WeaponSetting = myWeaponInfo;
 
-					myWeapon->ReloadTimeDebug = myWeaponInfo.ReloadTime;
+					myWeapon->ReloadTime = myWeaponInfo.ReloadTime;
 					myWeapon->UpdateStateWeapon_OnServer(MovementState);
 
 					myWeapon->AdditionalWeaponInfo = WeaponAdditionalInfo;

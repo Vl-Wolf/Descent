@@ -8,11 +8,11 @@
 #include "Engine/StaticMeshActor.h"
 #include "TDS/Character/TDSInventoryComponent.h"
 #include "Net/UnrealNetwork.h"
+#include "Projectiles/ProjectileDefault.h"
 
-// Sets default values
+
 AWeaponDefault::AWeaponDefault()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 
 	bReplicates = true;
@@ -42,51 +42,13 @@ void AWeaponDefault::BeginPlay()
 	WeaponInit();
 }
 
-// Called every frame
+
 void AWeaponDefault::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
 	if (HasAuthority())
-	{
-		FireTick(DeltaTime);
-		ReloadTick(DeltaTime);
 		DispersionTick(DeltaTime);
-		DropTick(DeltaTime);
-		ShellDropTick(DeltaTime);
-	}
-	
-}
-
-void AWeaponDefault::FireTick(float DeltaTime)
-{
-	if (WeaponFiring && GetWeaponRound() > 0 && !WeaponReloading)
-	{
-		if (FireTimer < 0.0f)
-		{
-			Fire();
-		}
-		else
-		{
-			FireTimer -= DeltaTime;
-		}
-	}
-	
-}
-
-void AWeaponDefault::ReloadTick(float DeltaTime)
-{
-	if (WeaponReloading)
-	{
-		if (ReloadTimer < 0.0f)
-		{
-			FinishReload();
-		}
-		else
-		{
-			ReloadTimer -= DeltaTime;
-		}
-	}
 }
 
 void AWeaponDefault::DispersionTick(float DeltaTime)
@@ -120,38 +82,6 @@ void AWeaponDefault::DispersionTick(float DeltaTime)
 		UE_LOG(LogTemp, Warning, TEXT("Dispersion: MAX = %f. MIN = %f. Current = %f"), CurrentDispersionMax, CurrentDispersionMin, CurrentDispersion);
 }
 
-void AWeaponDefault::DropTick(float DeltaTime)
-{
-	if (DropMagasinFlag)
-	{
-		if (DropMagasinTimer < 0.0f)
-		{
-			DropMagasinFlag = false;
-			InitDropMesh_OnServer(WeaponSetting.MagasinDrop.DropMesh, WeaponSetting.MagasinDrop.DropMeshOffset, WeaponSetting.MagasinDrop.DropMeshImpulseDirection, WeaponSetting.MagasinDrop.DropTime, WeaponSetting.MagasinDrop.DropMeshLifeTime, WeaponSetting.MagasinDrop.MassMesh, WeaponSetting.MagasinDrop.PowerImpulse, WeaponSetting.MagasinDrop.ImpulseRandomDispersion);
-		}
-		else
-		{
-			DropMagasinTimer -= DeltaTime;
-		}
-	}
-}
-
-void AWeaponDefault::ShellDropTick(float DeltaTime)
-{
-	if (DropShellBulletsFlag)
-	{
-		if (DropShellBulletsTimer < 0.0f)
-		{
-			DropShellBulletsFlag = false;
-			InitDropMesh_OnServer(WeaponSetting.ShellBullets.DropMesh, WeaponSetting.ShellBullets.DropMeshOffset, WeaponSetting.ShellBullets.DropMeshImpulseDirection, WeaponSetting.ShellBullets.DropTime, WeaponSetting.ShellBullets.DropMeshLifeTime, WeaponSetting.ShellBullets.MassMesh, WeaponSetting.ShellBullets.PowerImpulse, WeaponSetting.ShellBullets.ImpulseRandomDispersion);
-		}
-		else
-		{
-			DropShellBulletsTimer -= DeltaTime;
-		}
-	}
-}
-
 void AWeaponDefault::WeaponInit()
 {
 	if (SkeletalMeshWeapon && !SkeletalMeshWeapon->SkeletalMesh)
@@ -168,14 +98,16 @@ void AWeaponDefault::WeaponInit()
 
 void AWeaponDefault::SetWeaponStateFire_OnServer_Implementation(bool bIsFire)
 {
-	if (CheckWeaponCanFire())
+	if (CheckWeaponCanFire() && bIsFire && GetWeaponRound() > 0 && !WeaponReloading)
 	{
-		WeaponFiring = bIsFire;
+		WeaponFiring = true;
+		GetWorldTimerManager().SetTimer(FireTimerHandle, this, 
+			&AWeaponDefault::Fire, WeaponSetting.RateOfFire, true, 0.0f);
 	}
 	else
 	{
 		WeaponFiring = false;
-		FireTimer = 0.01f;//Remove
+		GetWorldTimerManager().ClearTimer(FireTimerHandle);
 	}
 }
 
@@ -211,18 +143,15 @@ void AWeaponDefault::Fire()
 
 	if (WeaponSetting.ShellBullets.DropMesh)
 	{
-		if (WeaponSetting.ShellBullets.DropTime < 0.0f)
+		if (WeaponSetting.ShellBullets.DropTime > 0.0f)
 		{
-			InitDropMesh_OnServer(WeaponSetting.ShellBullets.DropMesh, WeaponSetting.ShellBullets.DropMeshOffset, WeaponSetting.ShellBullets.DropMeshImpulseDirection, WeaponSetting.ShellBullets.DropTime, WeaponSetting.ShellBullets.DropMeshLifeTime, WeaponSetting.ShellBullets.MassMesh, WeaponSetting.ShellBullets.PowerImpulse, WeaponSetting.ShellBullets.ImpulseRandomDispersion);
+			GetWorldTimerManager().SetTimer(ShellDropTimerHandle, this, &AWeaponDefault::DropShell, 
+				WeaponSetting.ShellBullets.DropTime, false);
 		}
 		else
-		{
-			DropShellBulletsFlag = true;
-			DropShellBulletsTimer = WeaponSetting.ShellBullets.DropTime;
-		}
+			DropShell();
 	}
-
-	FireTimer = WeaponSetting.RateOfFire;
+	
 	AdditionalWeaponInfo.Round = AdditionalWeaponInfo.Round - 1;
 	ChangeDispersionByShoot();
 	
@@ -326,10 +255,13 @@ void AWeaponDefault::Fire()
 
 	if (GetWeaponRound() <= 0 && !WeaponReloading)
 	{
+		GetWorldTimerManager().ClearTimer(FireTimerHandle);
+		WeaponFiring = false;
+		
 		if (CheckCanWeaponReload())
-		{
 			InitReload();
-		}
+		
+		return;
 	}
 }
 
@@ -399,7 +331,6 @@ FVector AWeaponDefault::GetFireEndLocation() const
 	FVector EndLocation = FVector(0.0f);
 
 	FVector tmpV = (ShootLocation->GetComponentLocation() - ShootEndLocation);
-	//UE_LOG(LogTemp, Warning, TEXT("Vector: X = %f. Y = %f. Size = %f"), tmpV.X, tmpV.Y, tmpV.Size());
 	if (tmpV.Size() > SizeVectorToChangeShootDirectionLogic)
 	{
 		EndLocation = ShootLocation->GetComponentLocation() + ApplyDispersionToShoot((ShootLocation->GetComponentLocation() - ShootEndLocation).GetSafeNormal()) * -20000.0f;
@@ -447,43 +378,28 @@ void AWeaponDefault::InitReload()
 {
 	//on server
 	WeaponReloading = true;
+		
+	GetWorldTimerManager().ClearTimer(FireTimerHandle);
+	WeaponFiring = false;
+	
+	GetWorldTimerManager().SetTimer(ReloadTimerHandle, this, &AWeaponDefault::FinishReload, 
+		ReloadTime, false);
 
-	ReloadTimer = WeaponSetting.ReloadTime;
-
-	UAnimMontage* AnimPlay = nullptr;
-
-	if (WeaponAiming)
-	{
-		AnimPlay = WeaponSetting.AnimationWeaponInfo.AnimCharacterReloadAim;
-	}
-	else
-	{
-		AnimPlay = WeaponSetting.AnimationWeaponInfo.AnimCharacterReload;
-	}
+	UAnimMontage* AnimPlay = WeaponAiming ? WeaponSetting.AnimationWeaponInfo.AnimCharacterReloadAim : WeaponSetting.AnimationWeaponInfo.AnimCharacterReload;
 
 	OnWeaponReloadStart.Broadcast(AnimPlay);
 
-	UAnimMontage* AnimWeaponPlay = nullptr;
-
-	if (WeaponAiming)
-	{
-		AnimWeaponPlay = WeaponSetting.AnimationWeaponInfo.AnimWeaponReloadAim;
-	}
-	else
-	{
-		AnimWeaponPlay = WeaponSetting.AnimationWeaponInfo.AnimWeaponReload;
-	}
-
+	UAnimMontage* AnimWeaponPlay = WeaponAiming ? WeaponSetting.AnimationWeaponInfo.AnimWeaponReloadAim : WeaponSetting.AnimationWeaponInfo.AnimWeaponReload;
+	
 	if (WeaponSetting.AnimationWeaponInfo.AnimWeaponReload && SkeletalMeshWeapon && SkeletalMeshWeapon->GetAnimInstance())
 	{
-		//SkeletalMeshWeapon->GetAnimInstance()->Montage_Play(AnimWeaponPlay);
 		AnimWeaponStart_Multicast(AnimWeaponPlay);
 	}
 
 	if (WeaponSetting.MagasinDrop.DropMesh)
 	{
-		DropMagasinFlag = true;
-		DropMagasinTimer = WeaponSetting.MagasinDrop.DropTime;
+		GetWorldTimerManager().SetTimer(DropMagazineTimerHandle, this, &AWeaponDefault::DropMagazine, 
+			WeaponSetting.MagasinDrop.DropTime, false);
 	}
 }
 
@@ -512,13 +428,15 @@ void AWeaponDefault::FinishReload()
 void AWeaponDefault::CancelReload()
 {
 	WeaponReloading = false;
+	GetWorldTimerManager().ClearTimer(ReloadTimerHandle);
+	GetWorldTimerManager().ClearTimer(DropMagazineTimerHandle);
+	
 	if (SkeletalMeshWeapon && SkeletalMeshWeapon->GetAnimInstance())
 	{
 		SkeletalMeshWeapon->GetAnimInstance()->StopAllMontages(0.15f);
 	}
 
 	OnWeaponReloadEnd.Broadcast(false, 0);
-	DropMagasinFlag = false;
 }
 
 bool AWeaponDefault::CheckCanWeaponReload()
@@ -562,6 +480,32 @@ int8 AWeaponDefault::GetAviableAmmoForReload()
 	return AviableAmmoForWeapon;
 }
 
+void AWeaponDefault::DropMagazine()
+{
+	InitDropMesh_OnServer(
+		WeaponSetting.MagasinDrop.DropMesh, 
+		WeaponSetting.MagasinDrop.DropMeshOffset, 
+		WeaponSetting.MagasinDrop.DropMeshImpulseDirection, 
+		WeaponSetting.MagasinDrop.DropTime, 
+		WeaponSetting.MagasinDrop.DropMeshLifeTime, 
+		WeaponSetting.MagasinDrop.MassMesh, 
+		WeaponSetting.MagasinDrop.PowerImpulse, 
+		WeaponSetting.MagasinDrop.ImpulseRandomDispersion);
+}
+
+void AWeaponDefault::DropShell()
+{
+	InitDropMesh_OnServer(
+		WeaponSetting.ShellBullets.DropMesh, 
+		WeaponSetting.ShellBullets.DropMeshOffset, 
+		WeaponSetting.ShellBullets.DropMeshImpulseDirection, 
+		WeaponSetting.ShellBullets.DropTime, 
+		WeaponSetting.ShellBullets.DropMeshLifeTime, 
+		WeaponSetting.ShellBullets.MassMesh, 
+		WeaponSetting.ShellBullets.PowerImpulse, 
+		WeaponSetting.ShellBullets.ImpulseRandomDispersion);
+}
+
 void AWeaponDefault::FXWeaponFire_Multicast_Implementation(UParticleSystem* FXFire, USoundBase* SoundFire)
 {
 	if (SoundFire)
@@ -588,8 +532,6 @@ void AWeaponDefault::InitDropMesh_OnServer_Implementation(UStaticMesh* DropMesh,
 		
 
 		ShellDropFire_Multicast(DropMesh, Transform, DropImpulseDirection, DropTime, LifeTimeMesh, MassMesh, PowerImpulse, ImpulseRandomDispersion, LocalDir);
-
-		
 	}
 }
 

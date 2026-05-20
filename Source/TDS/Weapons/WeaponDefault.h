@@ -6,7 +6,6 @@
 #include "GameFramework/Actor.h"
 #include "Components/ArrowComponent.h"
 #include "TDS/FuncLibrary/Types.h"
-#include "TDS/Weapons/Projectiles/ProjectileDefault.h"
 
 #include "WeaponDefault.generated.h"
 
@@ -28,35 +27,41 @@ public:
 	FOnWeaponFire OnWeaponFire;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
-		class USceneComponent* SceneComponent = nullptr;
+	class USceneComponent* SceneComponent = nullptr;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
-		class USkeletalMeshComponent* SkeletalMeshWeapon = nullptr;
+	class USkeletalMeshComponent* SkeletalMeshWeapon = nullptr;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
-		class UStaticMeshComponent* StaticMeshWeapon = nullptr;
+	class UStaticMeshComponent* StaticMeshWeapon = nullptr;
+	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, meta = (AllowPrivateAccess = "true"), Category = Components)
-		class UArrowComponent* ShootLocation = nullptr;
+	class UArrowComponent* ShootLocation = nullptr;
 
 	UPROPERTY(VisibleAnywhere)
-		FWeaponInfo WeaponSetting;
+	FWeaponInfo WeaponSetting;
+	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Weapon Info")
-		FAdditionalWeaponInfo AdditionalWeaponInfo;
+	FAdditionalWeaponInfo AdditionalWeaponInfo;
 
 	//Timers
-	float FireTimer = 0.0f;
+	FTimerHandle FireTimerHandle;
+	FTimerHandle ReloadTimerHandle;
+	FTimerHandle DropMagazineTimerHandle;
+	FTimerHandle ShellDropTimerHandle;
+		
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic")
-		float ReloadTimer = 0.0f;
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic Debug")//Remove
-		float ReloadTimeDebug = 0.0f;
-
-
+	float ReloadTime = 0.0f;
+		
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FireLogic")
-		FName IdWeaponName;
+	FName IdWeaponName;
 
 	//Flags
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "FireLogic")
-		bool WeaponFiring = false;
+	bool WeaponFiring = false;
+	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "ReloadLogic")
-		bool WeaponReloading = false;
+	bool WeaponReloading = false;
 	bool WeaponAiming = false;
 	bool BlockFire = false;
 
@@ -67,40 +72,27 @@ public:
 	float CurrentDispersionMin = 0.1f;
 	float CurrentDispersionRecoil = 0.1f;
 	float CurrentDispersionReduction = 0.1f;
-
-	//Timer Drop magazine on reload
-	bool DropMagasinFlag = false;
-	float DropMagasinTimer = -1.0f;
-
-	//Timer Drop shell 
-	bool DropShellBulletsFlag = false;
-	float DropShellBulletsTimer = -1.0f;
-
+	
 	UPROPERTY(Replicated)
-		FVector ShootEndLocation = FVector(0);
+	FVector ShootEndLocation = FVector(0);
 
 protected:
-	// Called when the game starts or when spawned
-	virtual void BeginPlay() override;
 
-	//Tick
-	void FireTick(float DeltaTime);
-	void ReloadTick(float DeltaTime);
+	virtual void BeginPlay() override;
+	
 	void DispersionTick(float DeltaTime);
-	void DropTick(float DeltaTime);
-	void ShellDropTick(float DeltaTime);
 
 	void WeaponInit();
 
 	UFUNCTION()
-		void Fire();
+	void Fire();
 
 public:	
 	// Ticks
 	virtual void Tick(float DeltaTime) override;
 
 	UFUNCTION(Server, Reliable, BlueprintCallable)
-		void SetWeaponStateFire_OnServer(bool bIsFire);
+	void SetWeaponStateFire_OnServer(bool bIsFire);
 
 	bool CheckWeaponCanFire();
 
@@ -108,15 +100,19 @@ public:
 
 	UFUNCTION(Server, Reliable)
 	void UpdateStateWeapon_OnServer(EMovementState NewMovementState);
+	
 	void ChangeDispersionByShoot();
+	
 	float GetCurrentDispersion() const;
+	
 	FVector ApplyDispersionToShoot(FVector DirectionShoot) const;
 
 	FVector GetFireEndLocation() const;
+	
 	int8 GetNumberProjectileByShoot() const;
 
 	UFUNCTION(BlueprintCallable)
-		int32 GetWeaponRound();
+	int32 GetWeaponRound();
 
 	UFUNCTION()
 	void InitReload();
@@ -126,31 +122,40 @@ public:
 	bool CheckCanWeaponReload();
 	int8 GetAviableAmmoForReload();
 
+	void DropMagazine();
+	
+	void DropShell();
+	
 	UFUNCTION(Server, Reliable)
-		void InitDropMesh_OnServer(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion);
+	void InitDropMesh_OnServer(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		bool ShowDebug = false;
+	bool ShowDebug = false;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-		float SizeVectorToChangeShootDirectionLogic = 100.0f;
+	float SizeVectorToChangeShootDirectionLogic = 100.0f;
 
 
 	//Network
 	UFUNCTION(Server, Unreliable)
-		void UpdateWeaponByCharacterMovementState_OnServer(FVector NewShootEndLocation, bool NewShouldReduceDispersion);
-	UFUNCTION(NetMulticast, Unreliable)
-		void AnimWeaponStart_Multicast(UAnimMontage* Anim);
-	UFUNCTION(NetMulticast, Unreliable)
-		void ShellDropFire_Multicast(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion, FVector LocalDir);
+	void UpdateWeaponByCharacterMovementState_OnServer(FVector NewShootEndLocation, bool NewShouldReduceDispersion);
 	
 	UFUNCTION(NetMulticast, Unreliable)
-		void FXWeaponFire_Multicast(UParticleSystem* FXFire, USoundBase* SoundFire);
+	void AnimWeaponStart_Multicast(UAnimMontage* Anim);
+	
+	UFUNCTION(NetMulticast, Unreliable)
+	void ShellDropFire_Multicast(UStaticMesh* DropMesh, FTransform Offset, FVector DropImpulseDirection, float DropTime, float LifeTimeMesh, float MassMesh, float PowerImpulse, float ImpulseRandomDispersion, FVector LocalDir);
+	
+	UFUNCTION(NetMulticast, Unreliable)
+	void FXWeaponFire_Multicast(UParticleSystem* FXFire, USoundBase* SoundFire);
 
 	UFUNCTION(NetMulticast, Reliable)
-		void SpawnTraceHitDecal_Multicast(UMaterialInterface* DecalMaterial, FHitResult HitResult);
+	void SpawnTraceHitDecal_Multicast(UMaterialInterface* DecalMaterial, FHitResult HitResult);
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void SpawnTraceHitFX_Multicast(UParticleSystem* FXTemplate, FHitResult HitResult);
+	void SpawnTraceHitFX_Multicast(UParticleSystem* FXTemplate, FHitResult HitResult);
+	
 	UFUNCTION(NetMulticast, Reliable)
-		void SpawnTraceHitSound_Multicast(USoundBase* HitSound, FHitResult HitResult);
+	void SpawnTraceHitSound_Multicast(USoundBase* HitSound, FHitResult HitResult);
 
 };
