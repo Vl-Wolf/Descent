@@ -546,50 +546,33 @@ UDecalComponent* ATDSCharacter::GetCursorToWorld()
 
 void ATDSCharacter::TrySwitchNextWeapon()
 {
-	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.Num() > 1)
-	{
-		int8 OldIndex = CurrentIndexWeapon;
-		FAdditionalWeaponInfo OldInfo;
-		if(CurrentWeapon)
-		{
-			OldInfo = CurrentWeapon->AdditionalWeaponInfo;
-			if (CurrentWeapon->WeaponReloading)
-			{
-				CurrentWeapon->CancelReload();
-			}
-		}
-		if (InventoryComponent)
-		{
-			if (InventoryComponent->SwitchWeaponToIndexByNextPreviousIndex(CurrentIndexWeapon + 1, OldIndex, OldInfo, true))
-			{
+	if (!CurrentWeapon && !InventoryComponent && InventoryComponent->WeaponSlots.Num() <= 1)
+		return;
+	
+	int8 OldIndex = CurrentIndexWeapon;
 
-			}
-		}
-	}
+	FAdditionalWeaponInfo OldInfo = CurrentWeapon->AdditionalWeaponInfo;
+	
+	if (CurrentWeapon->WeaponReloading)
+		CurrentWeapon->CancelReload();
+	
+	InventoryComponent->SwitchWeaponToIndexByNextPreviousIndex(CurrentIndexWeapon + 1, OldIndex, OldInfo, true);
 }
 
 void ATDSCharacter::TrySwitchPreviousWeapon()
 {
-	if (CurrentWeapon && !CurrentWeapon->WeaponReloading && InventoryComponent->WeaponSlots.Num() > 1)
-	{
-		int8 OldIndex = CurrentIndexWeapon;
-		FAdditionalWeaponInfo OldInfo;
-		if (CurrentWeapon)
-		{
-			OldInfo = CurrentWeapon->AdditionalWeaponInfo;
-			if (CurrentWeapon->WeaponReloading)
-			{
-				CurrentWeapon->CancelReload();
-			}
-		}
-		if (InventoryComponent)
-		{
-			if (InventoryComponent->SwitchWeaponToIndexByNextPreviousIndex(CurrentIndexWeapon - 1, OldIndex, OldInfo, false))
-			{
+	if (!CurrentWeapon && !InventoryComponent && InventoryComponent->WeaponSlots.Num() <= 1)
+		return;
+	
+	int8 OldIndex = CurrentIndexWeapon;
 
-			}
-		}
-	}
+	FAdditionalWeaponInfo OldInfo = CurrentWeapon->AdditionalWeaponInfo;
+	
+	if (CurrentWeapon->WeaponReloading)
+		CurrentWeapon->CancelReload();
+	
+	InventoryComponent->SwitchWeaponToIndexByNextPreviousIndex(CurrentIndexWeapon - 1, OldIndex, OldInfo, false);
+	
 }
 
 void ATDSCharacter::TryAbilityEnabled()
