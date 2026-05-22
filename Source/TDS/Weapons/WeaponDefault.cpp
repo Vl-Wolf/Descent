@@ -441,42 +441,36 @@ void AWeaponDefault::CancelReload()
 
 bool AWeaponDefault::CheckCanWeaponReload()
 {
-	bool Result = true; 
-	if (GetOwner())
+	if (!GetOwner())
+		return false;
+	
+	UTDSInventoryComponent* Inventory = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
+	if (!Inventory)
+		return false;
+	
+	int8 AvailableAmmoForWeapon;
+	if (!Inventory->CheckAmmoForWeapon(WeaponSetting.WeaponType, AvailableAmmoForWeapon))
 	{
-		UTDSInventoryComponent* Inventory = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
-		if (Inventory)
-		{
-			int8 AvailableAmmoForWeapon;
-			if (!Inventory->CheckAmmoForWeapon(WeaponSetting.WeaponType, AvailableAmmoForWeapon))
-			{
-				Result = false;
-				Inventory->OnWeaponNotHaveRound.Broadcast(Inventory->GetWeaponIndexSlotByName(IdWeaponName));
-
-			}
-			else
-			{
-				Inventory->OnWeaponHaveRound.Broadcast(Inventory->GetWeaponIndexSlotByName(IdWeaponName));
-			}
-		}
+		Inventory->OnWeaponNotHaveRound.Broadcast(Inventory->GetWeaponIndexSlotByName(IdWeaponName));
+		return false;
 	}
-	return Result;
+	
+	Inventory->OnWeaponHaveRound.Broadcast(Inventory->GetWeaponIndexSlotByName(IdWeaponName));
+	return true;
 }
 
 int8 AWeaponDefault::GetAvailableAmmoForReload()
 {
 	int8 AvailableAmmoForWeapon = WeaponSetting.MaxRound;
-	if (GetOwner())
-	{
-		UTDSInventoryComponent* Inventory = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
-		if (Inventory)
-		{
-			if (Inventory->CheckAmmoForWeapon(WeaponSetting.WeaponType, AvailableAmmoForWeapon))
-			{
-				AvailableAmmoForWeapon = AvailableAmmoForWeapon;
-			}
-		}
-	}
+	if (!GetOwner())
+		return WeaponSetting.MaxRound;
+	
+	UTDSInventoryComponent* Inventory = Cast<UTDSInventoryComponent>(GetOwner()->GetComponentByClass(UTDSInventoryComponent::StaticClass()));
+	if (!Inventory)
+		return WeaponSetting.MaxRound;
+	
+	Inventory->CheckAmmoForWeapon(WeaponSetting.WeaponType, AvailableAmmoForWeapon);
+	
 	return AvailableAmmoForWeapon;
 }
 

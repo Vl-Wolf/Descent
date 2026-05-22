@@ -546,7 +546,7 @@ UDecalComponent* ATDSCharacter::GetCursorToWorld()
 
 void ATDSCharacter::TrySwitchNextWeapon()
 {
-	if (!CurrentWeapon && !InventoryComponent && InventoryComponent->WeaponSlots.Num() <= 1)
+	if (!CurrentWeapon || !InventoryComponent || InventoryComponent->WeaponSlots.Num() <= 1)
 		return;
 	
 	int8 OldIndex = CurrentIndexWeapon;
@@ -561,7 +561,7 @@ void ATDSCharacter::TrySwitchNextWeapon()
 
 void ATDSCharacter::TrySwitchPreviousWeapon()
 {
-	if (!CurrentWeapon && !InventoryComponent && InventoryComponent->WeaponSlots.Num() <= 1)
+	if (!CurrentWeapon || !InventoryComponent || InventoryComponent->WeaponSlots.Num() <= 1)
 		return;
 	
 	int8 OldIndex = CurrentIndexWeapon;
