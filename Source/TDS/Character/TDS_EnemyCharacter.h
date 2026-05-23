@@ -39,8 +39,9 @@ public:
 	void AddEffect(UTDS_StateEffect* NewEffect);
 	
 	void AddEffect_Implementation(UTDS_StateEffect* NewEffect) override;
-
-
+	
+	virtual TArray<UTDS_StateEffect*> GetAllCurrentEffects() override;
+	
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Setting")
 	TArray<UTDS_StateEffect*> Effects;
 	

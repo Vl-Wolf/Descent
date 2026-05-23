@@ -38,10 +38,19 @@ void ATDS_EnemyCharacter::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEf
 
 void ATDS_EnemyCharacter::AddEffect_Implementation(UTDS_StateEffect* NewEffect)
 {
+	if (Effects.Contains(NewEffect))
+		return;
+	
 	Effects.Add(NewEffect);
 
 	SwitchEffect(NewEffect, true);
+	
 	EffectAdd = NewEffect;
+}
+
+TArray<UTDS_StateEffect*> ATDS_EnemyCharacter::GetAllCurrentEffects()
+{
+	return Effects;
 }
 
 void ATDS_EnemyCharacter::EffectAdd_OnRep()

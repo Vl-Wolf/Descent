@@ -66,16 +66,19 @@ class TDS_API UTDS_StateEffect_ExecuteTimer : public UTDS_StateEffect
 public:
 
 	bool InitObject(AActor* Actor, FName BoneHit) override;
+	
 	void DestroyObject() override;
 
 	virtual void Execute();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting Execute Timer")
-		float Power = 20.0f;
+	float Power = 20.0f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting Execute Timer")
-		float Timer = 5.0f;
+	float Timer = 5.0f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting Execute Timer")
-		float RateTimer = 1.0f;
+	float RateTimer = 1.0f;
 
 	FTimerHandle TimerHandle_ExecuteTimer;
 	FTimerHandle TimerHandle_EffectTimer;
@@ -88,18 +91,21 @@ class TDS_API UTDS_StateEffect_AreaOfEffect : public UTDS_StateEffect_ExecuteTim
 	GENERATED_BODY()
 
 public:
+	virtual bool InitObject(AActor* Actor, FName BoneHit) override;
 
-	bool InitObject(AActor* Actor, FName BoneHit) override;
-	void DestroyObject() override;
+	virtual void DestroyObject() override;
 
 	virtual void FindActor();
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting Area of Effect")
-		float RadiusArea = 400.0f;
+	float RadiusArea = 400.0f;
+	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Effect Damage")
-		TSubclassOf<UTDS_StateEffect> Effect = nullptr;
-
-	//�� �������� ���������!!!
-	UParticleSystem* ParticleEffectAoE = ParticleEffect;
-	UParticleSystemComponent* ParticleEmitterAoE = ParticleEmitter;
+	TSubclassOf<UTDS_StateEffect> Effect = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting Area of Effect")
+	UParticleSystem* ParticleEffectAoE = nullptr;
+	
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Setting Area of Effect")
+	UParticleSystemComponent* ParticleEmitterAoE = nullptr;
 };

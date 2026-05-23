@@ -72,23 +72,7 @@ bool UTDS_StateEffect_ExecuteTimer::InitObject(AActor* Actor, FName BoneHit)
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle_EffectTimer, this, &UTDS_StateEffect_ExecuteTimer::DestroyObject, Timer, false);
 		GetWorld()->GetTimerManager().SetTimer(TimerHandle_ExecuteTimer, this, &UTDS_StateEffect_ExecuteTimer::Execute, RateTimer, true);
 	}
-	
-	/*if (ParticleEffect)
-	{
-		FName NameBoneToAttached = BoneHit;
-		FVector Location = FVector(0);
-
-		USceneComponent* mySkeletalMesh = Cast<USceneComponent>(myActor->GetComponentByClass(USkeletalMeshComponent::StaticClass()));
-		if (mySkeletalMesh)
-		{
-			ParticleEmitter = UGameplayStatics::SpawnEmitterAttached(ParticleEffect, mySkeletalMesh, NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-		}
-		else
-		{
-			ParticleEmitter = UGameplayStatics::SpawnEmitterAttached(ParticleEffect, myActor->GetRootComponent(), NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-		}
-	}*/
-	
+		
 	return true;
 }
 
@@ -99,8 +83,6 @@ void UTDS_StateEffect_ExecuteTimer::DestroyObject()
 		GetWorld()->GetTimerManager().ClearAllTimersForObject(this);
 	}
 
-	/*ParticleEmitter->DestroyComponent();
-	ParticleEmitter = nullptr;*/
 	Super::DestroyObject();
 }
 
@@ -122,31 +104,12 @@ bool UTDS_StateEffect_AreaOfEffect::InitObject(AActor* Actor, FName BoneHit)
 
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle_EffectTimer, this, &UTDS_StateEffect_AreaOfEffect::DestroyObject, Timer, false);
 	GetWorld()->GetTimerManager().SetTimer(TimerHandle_ExecuteTimer, this, &UTDS_StateEffect_AreaOfEffect::FindActor, RateTimer, true);
-
-
-	if (ParticleEffectAoE)
-	{
-		FName NameBoneToAttached = BoneHit;
-		FVector Location = FVector(0);
-
-		USceneComponent* mySkeletalMesh = Cast<USceneComponent>(myActor->GetComponentByClass(USkeletalMeshComponent::StaticClass()));
-		if (mySkeletalMesh)
-		{
-			ParticleEmitterAoE = UGameplayStatics::SpawnEmitterAttached(ParticleEffect, mySkeletalMesh, NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-		}
-		else
-		{
-			ParticleEmitterAoE = UGameplayStatics::SpawnEmitterAttached(ParticleEffect, myActor->GetRootComponent(), NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-		}
-	}
-
+	
 	return true;
 }
 
 void UTDS_StateEffect_AreaOfEffect::DestroyObject()
 {
-	/*ParticleEmitterAoE->DestroyComponent();
-	ParticleEmitterAoE = nullptr;*/
 	Super::DestroyObject();
 }
 

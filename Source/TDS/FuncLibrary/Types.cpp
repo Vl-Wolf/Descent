@@ -34,7 +34,7 @@ void UTypes::AddEffectBySurfaceType(AActor* TakeEffectActor, FName BoneHit, TSub
 						{
 							while (j < CurrentEffects.Num() && !bIsCanAddEffect)
 							{
-								if (CurrentEffects[j]->StaticClass() != AddEffectClass)
+								if (CurrentEffects[j]->GetClass() != AddEffectClass)
 								{
 									bIsCanAddEffect = true;
 								}
@@ -45,7 +45,6 @@ void UTypes::AddEffectBySurfaceType(AActor* TakeEffectActor, FName BoneHit, TSub
 						{
 							bIsCanAddEffect = true;
 						}
-
 					}
 					else
 					{
