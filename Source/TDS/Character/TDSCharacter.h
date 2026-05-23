@@ -8,6 +8,7 @@
 #include "TDS/Weapons/WeaponDefault.h"
 #include "TDS/Character/TDSInventoryComponent.h"
 #include "TDS/Character/TDSCharacterHealthComponent.h"
+#include "TDS/Character/TDS_EffectComponent.h"
 #include "TDS/Interface/TDS_IGameActor.h"
 #include "TDS/StateEffects/TDS_StateEffect.h"
 #include "TDSCharacter.generated.h"
@@ -73,19 +74,7 @@ protected:
 
 	UPROPERTY()
 	UDecalComponent* CurrentCursor = nullptr;
-
-	UPROPERTY(Replicated)
-	TArray<UTDS_StateEffect*> Effects;
 	
-	UPROPERTY(ReplicatedUsing = EffectAdd_OnRep)
-	UTDS_StateEffect* EffectAdd = nullptr;
-	
-	UPROPERTY(ReplicatedUsing = EffectRemove_OnRep)
-	UTDS_StateEffect* EffectRemove = nullptr;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Debug")
-	TArray<UParticleSystemComponent*> ParticleSystemEffects;
-
 	UPROPERTY(Replicated)
 	int32 CurrentIndexWeapon = 0;
 
@@ -118,6 +107,9 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Health", meta = (AllowPrivateAccess = "true"))
 	class UTDSCharacterHealthComponent* HealthComponent;
+	
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effect", meta = (AllowPrivateAccess = "true"))
+	class UTDS_EffectComponent* EffectComponent;
 
 	//Cursor material on decal
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
@@ -203,22 +195,14 @@ public:
 	
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	bool GetIsAlive();
-		
-	//Interface
+	
 	EPhysicalSurface GetSurfaceType() override;
+
+	virtual TArray<UTDS_StateEffect*> GetAllCurrentEffects_Implementation() override;
+
+	virtual void RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect) override;
 	
-	TArray<UTDS_StateEffect*> GetAllCurrentEffects() override;
-	
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void RemoveEffect(UTDS_StateEffect* RemoveEffect);
-	
-	void RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect) override;
-	
-	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
-	void AddEffect(UTDS_StateEffect* NewEffect);
-	
-	void AddEffect_Implementation(UTDS_StateEffect* NewEffect) override;
-	//Interface End
+	virtual void AddEffect_Implementation(UTDS_StateEffect* NewEffect) override;
 
 	UFUNCTION(BlueprintNativeEvent)
 	void CharacterDead_BP();
@@ -240,14 +224,6 @@ public:
 	
 	UFUNCTION(NetMulticast, Reliable)
 	void PlayAnim_Multicast(UAnimMontage* Anim);
-
-	UFUNCTION()
-	void EffectAdd_OnRep();
 	
-	UFUNCTION()
-	void EffectRemove_OnRep();
-
-	UFUNCTION()
-	void SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd);
 };
 

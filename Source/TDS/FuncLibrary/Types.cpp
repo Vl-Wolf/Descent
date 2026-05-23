@@ -2,69 +2,52 @@
 
 
 #include "Types.h"
-#include "TDS/TDS.h"
 #include "TDS/Interface/TDS_IGameActor.h"
 
-void UTypes::AddEffectBySurfaceType(AActor* TakeEffectActor, FName BoneHit, TSubclassOf<UTDS_StateEffect> AddEffectClass, EPhysicalSurface SurfaceType)
+void UTypes::AddEffectBySurfaceType(AActor* TakeEffectActor, FName BoneHit, TSubclassOf<UTDS_StateEffect> AddEffectClass, 
+	EPhysicalSurface SurfaceType)
 {
-	if (SurfaceType != EPhysicalSurface::SurfaceType_Default && TakeEffectActor && AddEffectClass)
+	if (SurfaceType == EPhysicalSurface::SurfaceType_Default || !TakeEffectActor || !AddEffectClass)
+		return;
+	
+	UTDS_StateEffect* CDO = Cast<UTDS_StateEffect>(AddEffectClass->GetDefaultObject());
+	if (!CDO)
+		return;
+	
+	bool bSurfaceCompatible  = false;
+	for (const auto& Surface : CDO->PossibleInteractSurface)
 	{
-		UTDS_StateEffect* Effect = Cast<UTDS_StateEffect>(AddEffectClass->GetDefaultObject());
-		if (Effect)
+		if (Surface == SurfaceType)
 		{
-			bool bIsHavePossibleSurface = false;
-			int8 i = 0;
-			while (i < Effect->PossibleInteractSurface.Num() && !bIsHavePossibleSurface)
+			bSurfaceCompatible = true;
+			break;
+		}
+	}
+	
+	if (!bSurfaceCompatible)
+		return;
+	
+	bool bCanAdd = true;
+	if (!CDO->bIsStackable)
+	{
+		TArray<UTDS_StateEffect*> CurrentEffects = ITDS_IGameActor::Execute_GetAllCurrentEffects(TakeEffectActor);
+		
+		for (UTDS_StateEffect* ExistingEffect : CurrentEffects)
+		{
+			if (ExistingEffect && ExistingEffect->GetClass() == AddEffectClass)
 			{
-				if (Effect->PossibleInteractSurface[i] == SurfaceType)
-				{
-					bIsHavePossibleSurface = true;
-					bool bIsCanAddEffect = false;
-					if (!Effect->bIsStackable)
-					{
-						int8 j = 0;
-						TArray<UTDS_StateEffect*> CurrentEffects;
-						ITDS_IGameActor* ActorInterface = Cast<ITDS_IGameActor>(TakeEffectActor);
-						if (ActorInterface)
-						{
-							CurrentEffects = ActorInterface->GetAllCurrentEffects();
-						}
-
-						if (CurrentEffects.Num() > 0)
-						{
-							while (j < CurrentEffects.Num() && !bIsCanAddEffect)
-							{
-								if (CurrentEffects[j]->GetClass() != AddEffectClass)
-								{
-									bIsCanAddEffect = true;
-								}
-								j++;
-							}
-						}
-						else
-						{
-							bIsCanAddEffect = true;
-						}
-					}
-					else
-					{
-						bIsCanAddEffect = true;
-					}
-
-					if (bIsCanAddEffect)
-					{
-
-						UTDS_StateEffect* NewEffect = NewObject<UTDS_StateEffect>(TakeEffectActor, AddEffectClass);
-						if (NewEffect)
-						{
-							NewEffect->InitObject(TakeEffectActor, BoneHit);
-						}
-					}
-
-				}
-				i++;
+				bCanAdd = false;
+				break;
 			}
 		}
-
+	}
+	
+	if (bCanAdd)
+	{
+		UTDS_StateEffect* NewEffect = NewObject<UTDS_StateEffect>(TakeEffectActor, AddEffectClass);
+		if (NewEffect)
+		{
+			NewEffect->InitObject(TakeEffectActor, BoneHit);
+		}
 	}
 }

@@ -27,15 +27,15 @@ public:
 
 	virtual EPhysicalSurface GetSurfaceType();
 
-	virtual TArray<UTDS_StateEffect*> GetAllCurrentEffects();
+	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
+	TArray<UTDS_StateEffect*> GetAllCurrentEffects();
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void RemoveEffect(UTDS_StateEffect* RemoveEffect);
 	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void AddEffect(UTDS_StateEffect* newEffect);
-
-	//inv
+	
 	UFUNCTION(BlueprintCallable, BlueprintNativeEvent)
 	void DropWeaponToWorld(FDropItem DropItemInfo);
 	

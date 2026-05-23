@@ -2,20 +2,19 @@
 
 
 #include "TDS_EnemyCharacter.h"
-#include "Net/UnrealNetwork.h"
-#include "Particles/ParticleSystemComponent.h"
-#include "Engine/ActorChannel.h"
-#include "Kismet/GameplayStatics.h"
 
 ATDS_EnemyCharacter::ATDS_EnemyCharacter()
 {
 	PrimaryActorTick.bCanEverTick = true;
+	
+	EffectComponent = CreateDefaultSubobject<UTDS_EffectComponent>(TEXT("EffectComponent"));
 }
 
 void ATDS_EnemyCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	EffectComponent->SetAttachTarget(GetMesh());
 }
 
 void ATDS_EnemyCharacter::Tick(float DeltaTime)
@@ -30,107 +29,29 @@ void ATDS_EnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 
 void ATDS_EnemyCharacter::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect)
 {
-	Effects.Remove(RemoveEffect);
-
-	SwitchEffect(RemoveEffect, false);
-	EffectRemove = RemoveEffect;
+	EffectComponent->RemoveEffect(RemoveEffect);
 }
 
 void ATDS_EnemyCharacter::AddEffect_Implementation(UTDS_StateEffect* NewEffect)
 {
-	if (Effects.Contains(NewEffect))
-		return;
-	
-	Effects.Add(NewEffect);
-
-	SwitchEffect(NewEffect, true);
-	
-	EffectAdd = NewEffect;
+	EffectComponent->ApplyEffect(NewEffect);
 }
 
-TArray<UTDS_StateEffect*> ATDS_EnemyCharacter::GetAllCurrentEffects()
+TArray<UTDS_StateEffect*> ATDS_EnemyCharacter::GetAllCurrentEffects_Implementation()
 {
-	return Effects;
-}
-
-void ATDS_EnemyCharacter::EffectAdd_OnRep()
-{
-	if (EffectAdd)
-	{
-		SwitchEffect(EffectAdd, true);
-	}
-}
-
-void ATDS_EnemyCharacter::EffectRemove_OnRep()
-{
-	if (EffectRemove)
-	{
-		SwitchEffect(EffectRemove, false);
-	}
-}
-
-void ATDS_EnemyCharacter::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd)
-{
-	if (bIsAdd)
-	{
-		if (Effect && Effect->ParticleEffect)
-		{
-			FName NameBoneToAttached = Effect->NameBone;
-			FVector Location = FVector(0);
-
-			USkeletalMeshComponent* CharacterMesh = GetMesh();
-
-			if (CharacterMesh)
-			{
-				UParticleSystemComponent* NewParticleSystem = UGameplayStatics::UGameplayStatics::SpawnEmitterAttached(Effect->ParticleEffect, CharacterMesh,
-					NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-				ParticleSystemEffects.Add(NewParticleSystem);
-			}
-		}
-	}
-	else
-	{
-		int32 i = 0;
-		bool bIsFind = false;
-		if (ParticleSystemEffects.Num() > 0)
-		{
-			while (i < ParticleSystemEffects.Num() && !bIsFind)
-			{
-				if (ParticleSystemEffects[i]->Template && Effect->ParticleEffect && Effect->ParticleEffect == ParticleSystemEffects[i]->Template)
-				{
-					bIsFind = true;
-					ParticleSystemEffects[i]->DeactivateSystem();
-					ParticleSystemEffects[i]->DestroyComponent();
-					ParticleSystemEffects.RemoveAt(i);
-				}
-				i++;
-			}
-		}
-	}
+	return EffectComponent->GetActiveEffects();
 }
 
 bool ATDS_EnemyCharacter::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
 	bool Wrote = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
-
-	for (int32 i = 0; i < Effects.Num(); i++)
-	{
-		if (Effects[i])
-		{
-			Wrote |= Channel->ReplicateSubobject(Effects[i], *Bunch, *RepFlags);
-		}
-	}
-
+	Wrote |= EffectComponent->ReplicateEffectSubobjects(Channel, Bunch, RepFlags);
 	return Wrote;
 }
 
 void ATDS_EnemyCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ATDS_EnemyCharacter, Effects);
-	DOREPLIFETIME(ATDS_EnemyCharacter, EffectAdd);
-	DOREPLIFETIME(ATDS_EnemyCharacter, EffectRemove);
 }
 
 

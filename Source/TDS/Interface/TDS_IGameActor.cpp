@@ -9,19 +9,3 @@ EPhysicalSurface ITDS_IGameActor::GetSurfaceType()
 {
 	return EPhysicalSurface::SurfaceType_Default;
 }
-
-TArray<UTDS_StateEffect*> ITDS_IGameActor::GetAllCurrentEffects()
-{
-	TArray<UTDS_StateEffect*> Effect;
-	return Effect;
-}
-
-//void ITDS_IGameActor::RemoveEffect(UTDS_StateEffect* RemoveEffect)
-//{
-//
-//}
-//
-//void ITDS_IGameActor::AddEffect(UTDS_StateEffect* newEffect)
-//{
-//
-//}

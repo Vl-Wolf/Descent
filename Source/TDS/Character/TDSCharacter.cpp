@@ -15,8 +15,6 @@
 #include "TDS/Game/TDSGameInstance.h"
 #include "TDS/Weapons/Projectiles/ProjectileDefault.h"
 #include "Net/UnrealNetwork.h"
-#include "Particles/ParticleSystemComponent.h"
-#include "Engine/ActorChannel.h"
 
 
 ATDSCharacter::ATDSCharacter()
@@ -50,6 +48,7 @@ ATDSCharacter::ATDSCharacter()
 
 	InventoryComponent = CreateDefaultSubobject<UTDSInventoryComponent>(TEXT("InventoryComponent"));
 	HealthComponent = CreateDefaultSubobject<UTDSCharacterHealthComponent>(TEXT("HealthComponent"));
+	EffectComponent = CreateDefaultSubobject<UTDS_EffectComponent>(TEXT("EffectComponent"));
 
 	if (HealthComponent)
 	{
@@ -72,8 +71,7 @@ ATDSCharacter::ATDSCharacter()
 void ATDSCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-
-
+	
 	if (CurrentCursor)
 	{
 		APlayerController* PlayerController = Cast<APlayerController>(GetController());
@@ -103,6 +101,8 @@ void ATDSCharacter::BeginPlay()
 			CurrentCursor = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), CursorMaterial, CursorSize, FVector(0));
 		}
 	}
+	
+	EffectComponent->SetAttachTarget(GetMesh());
 }
 
 void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* NewInputComponent)
@@ -284,7 +284,7 @@ EMovementState ATDSCharacter::GetMovementState()
 
 TArray<UTDS_StateEffect*> ATDSCharacter::GetCurrentEffectsOnChar()
 {
-	return Effects;
+	return EffectComponent->GetActiveEffects();
 }
 
 int32 ATDSCharacter::GetCurrentWeaponIndex()
@@ -612,28 +612,19 @@ EPhysicalSurface ATDSCharacter::GetSurfaceType()
 	return Result;
 }
 
-TArray<UTDS_StateEffect*> ATDSCharacter::GetAllCurrentEffects()
+TArray<UTDS_StateEffect*> ATDSCharacter::GetAllCurrentEffects_Implementation()
 {
-	return Effects;
+	return EffectComponent->GetActiveEffects();
 }
 
 void ATDSCharacter::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect)
 {
-	Effects.Remove(RemoveEffect);
-
-	SwitchEffect(RemoveEffect, false);
-	EffectRemove = RemoveEffect;
+	EffectComponent->RemoveEffect(RemoveEffect);
 }
 
 void ATDSCharacter::AddEffect_Implementation(UTDS_StateEffect* NewEffect)
 {
-	if (Effects.Contains(NewEffect))
-		return;
-	
-	Effects.Add(NewEffect);
-
-	SwitchEffect(NewEffect, true);
-	EffectAdd = NewEffect;
+	EffectComponent->ApplyEffect(NewEffect);
 }
 
 void ATDSCharacter::TryReloadWeapon_OnServer_Implementation()
@@ -757,78 +748,12 @@ void ATDSCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLif
 	DOREPLIFETIME(ATDSCharacter, MovementState);
 	DOREPLIFETIME(ATDSCharacter, CurrentWeapon);
 	DOREPLIFETIME(ATDSCharacter, CurrentIndexWeapon);
-	DOREPLIFETIME(ATDSCharacter, Effects);
-	DOREPLIFETIME(ATDSCharacter, EffectAdd);
-	DOREPLIFETIME(ATDSCharacter, EffectRemove);
 }
 
-void ATDSCharacter::EffectAdd_OnRep()
-{
-	if (EffectAdd)
-	{
-		SwitchEffect(EffectAdd, true);
-	}
-}
-
-void ATDSCharacter::EffectRemove_OnRep()
-{
-	if (EffectRemove)
-	{
-		SwitchEffect(EffectRemove, false);
-	}
-}
-
-void ATDSCharacter::SwitchEffect(UTDS_StateEffect* Effect, bool bIsAdd)
-{
-	if (bIsAdd)
-	{
-		if (Effect && Effect->ParticleEffect)
-		{
-			FName NameBoneToAttached = Effect->NameBone;
-			FVector Location = FVector(0);
-
-			USkeletalMeshComponent* CharacterMesh = GetMesh();
-			
-			if (CharacterMesh)
-			{
-				UParticleSystemComponent* NewParticleSystem = UGameplayStatics::UGameplayStatics::SpawnEmitterAttached(Effect->ParticleEffect, CharacterMesh, 
-					NameBoneToAttached, Location, FRotator::ZeroRotator, EAttachLocation::SnapToTarget, false);
-				ParticleSystemEffects.Add(NewParticleSystem);
-			}
-		}
-	}
-	else
-	{
-		int32 i = 0;
-		bool bIsFind = false;
-		if (ParticleSystemEffects.Num() > 0)
-		{
-			while (i < ParticleSystemEffects.Num() && !bIsFind)
-			{
-				if (ParticleSystemEffects[i]->Template && Effect->ParticleEffect && Effect->ParticleEffect == ParticleSystemEffects[i]->Template)
-				{
-					bIsFind = true;
-					ParticleSystemEffects[i]->DeactivateSystem();
-					ParticleSystemEffects[i]->DestroyComponent();
-					ParticleSystemEffects.RemoveAt(i);
-				}
-				i++;
-			}
-		}
-	}
-}
 
 bool ATDSCharacter::ReplicateSubobjects(UActorChannel* Channel, FOutBunch* Bunch, FReplicationFlags* RepFlags)
 {
 	bool Wrote = Super::ReplicateSubobjects(Channel, Bunch, RepFlags);
-
-	for (int32 i = 0; i < Effects.Num(); i++)
-	{
-		if (Effects[i]) 
-		{ 
-			Wrote |= Channel->ReplicateSubobject(Effects[i], *Bunch, *RepFlags); 
-		}
-	}
-
+	Wrote |= EffectComponent->ReplicateEffectSubobjects(Channel, Bunch, RepFlags); 
 	return Wrote;
 }
