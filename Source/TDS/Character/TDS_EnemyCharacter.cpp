@@ -22,11 +22,6 @@ void ATDS_EnemyCharacter::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 }
 
-void ATDS_EnemyCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
-{
-	Super::SetupPlayerInputComponent(PlayerInputComponent);
-}
-
 void ATDS_EnemyCharacter::RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect)
 {
 	EffectComponent->RemoveEffect(RemoveEffect);

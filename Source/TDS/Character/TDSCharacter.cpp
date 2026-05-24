@@ -3,14 +3,11 @@
 #include "TDSCharacter.h"
 #include "UObject/ConstructorHelpers.h"
 #include "Camera/CameraComponent.h"
-#include "Components/DecalComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/PlayerController.h"
 #include "GameFramework/SpringArmComponent.h"
 #include "Materials/Material.h"
-#include "Kismet/GameplayStatics.h"
-#include "Kismet/KismetMathLibrary.h"
 #include "Engine/World.h"
 #include "TDS/Game/TDSGameInstance.h"
 #include "TDS/Weapons/Projectiles/ProjectileDefault.h"
@@ -59,223 +56,24 @@ ATDSCharacter::ATDSCharacter()
 	{
 		InventoryComponent->OnSwitchWeapon.AddDynamic(this, &ATDSCharacter::InitWeapon);
 	}
-
-	// Activate ticking in order to update the cursor every frame.
+	
 	PrimaryActorTick.bCanEverTick = true;
 	PrimaryActorTick.bStartWithTickEnabled = true;
-
-	//Network
+	
 	bReplicates = true;
 }
 
 void ATDSCharacter::Tick(float DeltaSeconds)
 {
     Super::Tick(DeltaSeconds);
-	
-	if (CurrentCursor)
-	{
-		APlayerController* PlayerController = Cast<APlayerController>(GetController());
-		if (PlayerController && PlayerController->IsLocalPlayerController())
-		{
-			FHitResult TraceHitResult;
-			PlayerController->GetHitResultUnderCursor(ECC_Visibility, true, TraceHitResult);
-			FVector CursorFV = TraceHitResult.ImpactNormal;
-			FRotator CursorR = CursorFV.Rotation();
-
-			CurrentCursor->SetWorldLocation(TraceHitResult.Location);
-			CurrentCursor->SetWorldRotation(CursorR);
-		}
-	}
-
-	MovementTick(DeltaSeconds);
 }
 
 void ATDSCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	
-	if (GetWorld() && GetWorld()->GetNetMode() != NM_DedicatedServer)
-	{
-		if (CursorMaterial && IsLocallyControlled())
-		{			
-			CurrentCursor = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), CursorMaterial, CursorSize, FVector(0));
-		}
-	}
-	
+		
 	EffectComponent->SetAttachTarget(GetMesh());
 }
-
-void ATDSCharacter::SetupPlayerInputComponent(UInputComponent* NewInputComponent)
-{
-	Super::SetupPlayerInputComponent(NewInputComponent);
-
-	NewInputComponent->BindAxis(TEXT("MoveForward"), this, &ATDSCharacter::InputAxisX);
-	NewInputComponent->BindAxis(TEXT("MoveRight"), this, &ATDSCharacter::InputAxisY);
-
-	NewInputComponent->BindAction(TEXT("ChangeToSprint"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputSprintPressed);
-	NewInputComponent->BindAction(TEXT("ChangeToWalk"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputWalkPressed);
-	NewInputComponent->BindAction(TEXT("AimEvent"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputAimPressed);
-	NewInputComponent->BindAction(TEXT("ChangeToSprint"), EInputEvent::IE_Released, this, &ATDSCharacter::InputSprintReleased);
-	NewInputComponent->BindAction(TEXT("ChangeToWalk"), EInputEvent::IE_Released, this, &ATDSCharacter::InputWalkReleased);
-	NewInputComponent->BindAction(TEXT("AimEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::InputAimReleased);
-
-
-	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Pressed, this, &ATDSCharacter::InputAttackPressed);
-	NewInputComponent->BindAction(TEXT("FireEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::InputAttackReleased);
-	NewInputComponent->BindAction(TEXT("ReloadEvent"), EInputEvent::IE_Released, this, &ATDSCharacter::TryReloadWeapon);
-
-	NewInputComponent->BindAction(TEXT("SwitchNextWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchNextWeapon);
-	NewInputComponent->BindAction(TEXT("SwitchPreviousWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TrySwitchPreviousWeapon);
-
-	NewInputComponent->BindAction(TEXT("AbilityAction"), EInputEvent::IE_Pressed, this, &ATDSCharacter::TryAbilityEnabled);
-
-	NewInputComponent->BindAction(TEXT("DropCurrentWeapon"), EInputEvent::IE_Pressed, this, &ATDSCharacter::DropCurrentWeapon);
-
-	TArray<FKey> HotKeys;
-	HotKeys.Add(EKeys::One);
-	HotKeys.Add(EKeys::Two);
-	HotKeys.Add(EKeys::Three);
-	HotKeys.Add(EKeys::Four);
-	HotKeys.Add(EKeys::Five);
-	HotKeys.Add(EKeys::Six);
-	HotKeys.Add(EKeys::Seven);
-	HotKeys.Add(EKeys::Eight);
-	HotKeys.Add(EKeys::Nine);
-	HotKeys.Add(EKeys::Zero);
-
-	NewInputComponent->BindKey(HotKeys[1], IE_Pressed, this, &ATDSCharacter::TKeyPressed<1>);
-	NewInputComponent->BindKey(HotKeys[2], IE_Pressed, this, &ATDSCharacter::TKeyPressed<2>);
-	NewInputComponent->BindKey(HotKeys[3], IE_Pressed, this, &ATDSCharacter::TKeyPressed<3>);
-	NewInputComponent->BindKey(HotKeys[4], IE_Pressed, this, &ATDSCharacter::TKeyPressed<4>);
-	NewInputComponent->BindKey(HotKeys[5], IE_Pressed, this, &ATDSCharacter::TKeyPressed<5>);
-	NewInputComponent->BindKey(HotKeys[6], IE_Pressed, this, &ATDSCharacter::TKeyPressed<6>);
-	NewInputComponent->BindKey(HotKeys[7], IE_Pressed, this, &ATDSCharacter::TKeyPressed<7>);
-	NewInputComponent->BindKey(HotKeys[8], IE_Pressed, this, &ATDSCharacter::TKeyPressed<8>);
-	NewInputComponent->BindKey(HotKeys[9], IE_Pressed, this, &ATDSCharacter::TKeyPressed<9>);
-	NewInputComponent->BindKey(HotKeys[0], IE_Pressed, this, &ATDSCharacter::TKeyPressed<0>);
-}
-
-void ATDSCharacter::InputAxisX(float Value)
-{
-	AxisX = Value;
-}
-
-void ATDSCharacter::InputAxisY(float Value)
-{
-	AxisY = Value;
-}
-
-void ATDSCharacter::InputAttackPressed()
-{
-	if (HealthComponent && HealthComponent->GetIsAlive())
-	{
-		AttackCharEvent(true);
-	}
-	
-}
-
-void ATDSCharacter::InputAttackReleased()
-{
-	AttackCharEvent(false);
-}
-
-void ATDSCharacter::InputWalkPressed()
-{
-	WalkEnabled = true;
-	ChangeMovementState();
-}
-
-void ATDSCharacter::InputWalkReleased()
-{
-	WalkEnabled = false;
-	ChangeMovementState();
-}
-
-void ATDSCharacter::InputSprintPressed()
-{
-	SprintRunEnabled = true;
-	ChangeMovementState();
-}
-
-void ATDSCharacter::InputSprintReleased()
-{
-	SprintRunEnabled = false;
-	ChangeMovementState();
-}
-
-void ATDSCharacter::InputAimPressed()
-{
-	AimEnabled = true;
-	ChangeMovementState();
-}
-
-void ATDSCharacter::InputAimReleased()
-{
-	AimEnabled = false;
-	ChangeMovementState();
-}
-
-void ATDSCharacter::MovementTick(float DeltaTime)
-{
-	if (!HealthComponent || !HealthComponent->GetIsAlive())
-		return;
-	
-	APlayerController* PlayerController = Cast<APlayerController>(GetController());
-	if (!PlayerController || !PlayerController->IsLocalController())
-		return;
-	
-	AddMovementInput(FVector(1.0f, 0.0f, 0.0f), AxisX);
-	AddMovementInput(FVector(0.0f, 1.0f, 0.0f), AxisY);
-	
-	if (MovementState == EMovementState::Sprint_State)
-	{
-		FVector RotationVector = FVector(AxisX, AxisY, 0.0f);
-		FRotator Rotator = RotationVector.ToOrientationRotator();
-
-		SetActorRotation(FQuat(Rotator));
-		SetActorRotationByYaw_OnServer(Rotator.Yaw);
-	}
-	else
-	{
-		
-		FHitResult ResultHit;
-		PlayerController->GetHitResultUnderCursor(ECC_GameTraceChannel1, true, ResultHit);
-		float FindRotatorResultYaw = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), ResultHit.Location).Yaw;
-
-		SetActorRotation(FQuat(FRotator(0.0f, FindRotatorResultYaw, 0.0f)));
-		SetActorRotationByYaw_OnServer(FindRotatorResultYaw);
-
-		if (CurrentWeapon)
-		{
-			FVector Displacement = FVector(0);
-			bool bIsReduceDispersion = false;
-			switch (MovementState)
-			{
-			case EMovementState::Aim_State:
-				Displacement = FVector(0.0f, 0.0f, 160.0f);
-				bIsReduceDispersion = true;
-				break;
-			case EMovementState::AimWalk_State:
-				Displacement = FVector(0.0f, 0.0f, 160.0f);
-				bIsReduceDispersion = true;
-				break;
-			case EMovementState::Walk_State:
-				Displacement = FVector(0.0f, 0.0f, 120.0f);
-				break;
-			case EMovementState::Run_State:
-				Displacement = FVector(0.0f, 0.0f, 120.0f);
-				break;
-			case EMovementState::Sprint_State:
-				break;
-			default:
-				break;
-			}
-			
-			CurrentWeapon->UpdateWeaponByCharacterMovementState_OnServer(ResultHit.Location + Displacement, bIsReduceDispersion);
-		}
-	}
-}
-
 
 EMovementState ATDSCharacter::GetMovementState()
 {
@@ -315,6 +113,66 @@ void ATDSCharacter::AttackCharEvent(bool bIsFiring)
 	Weapon->SetWeaponStateFire_OnServer(bIsFiring);
 }
 
+void ATDSCharacter::RequestSwitchWeaponByIndex(int32 Id)
+{
+	TrySwitchWeaponToIndexByKeyInput_OnServer(Id);
+}
+
+void ATDSCharacter::SetAimLocation(FVector Location)
+{
+	if (!CurrentWeapon)
+		return;
+	
+	FVector Displacement = FVector::ZeroVector;
+	bool bIsReduceDispersion = false;
+	
+	if (MovementState == EMovementState::Aim_State || MovementState == EMovementState::AimWalk_State)
+	{
+		Displacement = FVector(0.0f, 0.0f, 160.0f);
+		bIsReduceDispersion = true;
+	}
+	else if (MovementState == EMovementState::Walk_State || MovementState == EMovementState::Run_State)
+	{
+		Displacement = FVector(0.0f, 0.0f, 120.0f);
+	}
+			
+	CurrentWeapon->UpdateWeaponByCharacterMovementState_OnServer(Location + Displacement, bIsReduceDispersion);
+	
+}
+
+void ATDSCharacter::SetFiring(bool bIsFiring)
+{
+	if (HealthComponent && HealthComponent->GetIsAlive())
+	{
+		AttackCharEvent(bIsFiring);
+	}
+}
+
+void ATDSCharacter::RequestReload()
+{
+	TryReloadWeapon();
+}
+
+void ATDSCharacter::RequestAbility()
+{
+	TryAbilityEnabled_OnServer();
+}
+
+void ATDSCharacter::RequestDropWeapon()
+{
+	DropCurrentWeapon();
+}
+
+void ATDSCharacter::RequestSwitchNextWeapon()
+{
+	TrySwitchNextWeapon();
+}
+
+void ATDSCharacter::RequestSwitchPreviousWeapon()
+{
+	TrySwitchPreviousWeapon();
+}
+
 void ATDSCharacter::CharacterUpdate()
 {
 	float ResSpeed = 600.0f;
@@ -343,55 +201,6 @@ void ATDSCharacter::CharacterUpdate()
 	GetCharacterMovement()->MaxWalkSpeed = ResSpeed;
 }
 
-void ATDSCharacter::ChangeMovementState()
-{
-	EMovementState NewState = EMovementState::Run_State;
-
-	if (!SprintRunEnabled && !WalkEnabled && !AimEnabled)
-	{
-		NewState = EMovementState::Run_State;
-	}
-	else
-	{
-		if (SprintRunEnabled)
-		{
-			NewState = EMovementState::Sprint_State;
-			WalkEnabled = false;
-			AimEnabled = false;
-		}
-		else
-		{
-			if (!SprintRunEnabled && WalkEnabled && AimEnabled)
-			{
-				NewState = EMovementState::AimWalk_State;
-			}
-			else
-			{
-				if (!SprintRunEnabled && WalkEnabled && !AimEnabled)
-				{
-					NewState = EMovementState::Walk_State;
-				}
-				else
-				{
-					if (!SprintRunEnabled && !WalkEnabled && AimEnabled)
-					{
-						NewState = EMovementState::Aim_State;
-					}
-				}
-			}
-		}
-		
-	}
-
-	SetMovementState_OnServer(NewState);
-	
-
-	//weapon state
-	AWeaponDefault* Weapon = GetCurrentWeapon();
-	if (Weapon)
-		Weapon->UpdateStateWeapon_OnServer(NewState);
-}
-
 AWeaponDefault* ATDSCharacter::GetCurrentWeapon()
 {
 	return CurrentWeapon;
@@ -399,7 +208,6 @@ AWeaponDefault* ATDSCharacter::GetCurrentWeapon()
 
 void ATDSCharacter::InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon)
 {
-	//on server
 	if (CurrentWeapon)
 	{
 		CurrentWeapon->Destroy();
@@ -538,12 +346,6 @@ void ATDSCharacter::WeaponFire_BP_Implementation(UAnimMontage* Anim)
 	//BP
 }
 
-UDecalComponent* ATDSCharacter::GetCursorToWorld()
-{
-	return CurrentCursor;
-}
-
-
 void ATDSCharacter::TrySwitchNextWeapon()
 {
 	if (!CurrentWeapon || !InventoryComponent || InventoryComponent->WeaponSlots.Num() <= 1)
@@ -656,6 +458,10 @@ void ATDSCharacter::SetMovementState_Multicast_Implementation(EMovementState New
 {
 	MovementState = NewState;
 	CharacterUpdate();
+	
+	AWeaponDefault* Weapon = GetCurrentWeapon();
+	if (Weapon)
+		Weapon->UpdateStateWeapon_OnServer(MovementState);
 }
 
 void ATDSCharacter::PlayAnim_Multicast_Implementation(UAnimMontage* Anim)
@@ -698,9 +504,6 @@ void ATDSCharacter::CharacterDead()
 	}
 	else
 	{
-		if (GetCursorToWorld())
-			GetCursorToWorld()->SetVisibility(false);
-
 		AttackCharEvent(false);
 	}
 

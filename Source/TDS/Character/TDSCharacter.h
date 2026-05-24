@@ -23,58 +23,21 @@ protected:
 	bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 
 	virtual void BeginPlay() override;
-
-
-	//Inputs Start
-	void InputAxisX(float Value);
-	void InputAxisY(float Value);
 	
-	void InputAttackPressed();
-	void InputAttackReleased();
-
-	void InputWalkPressed();
-	void InputWalkReleased();
-
-	void InputSprintPressed();
-	void InputSprintReleased();
-
-	void InputAimPressed();
-	void InputAimReleased();
-
-	//Inventory Inputs
 	void TrySwitchNextWeapon();
 	void TrySwitchPreviousWeapon();
-
-	//Ability Inputs
+	
 	void TryAbilityEnabled();
 	
 	UFUNCTION(Server, Reliable)
 	void TryAbilityEnabled_OnServer();	
-
-	template<int32 Id>
-	void TKeyPressed()
-	{
-		TrySwitchWeaponToIndexByKeyInput_OnServer(Id);
-	}
-	//Inputs End
-
-	//Inputs Flags
-	float AxisX = 0.0f;
-	float AxisY = 0.0f;
-
-	bool SprintRunEnabled = false;
-	bool WalkEnabled = false;
-	bool AimEnabled = false;
-
+	
 	UPROPERTY(Replicated)
 	EMovementState MovementState = EMovementState::Run_State;
 	
 	UPROPERTY(Replicated)
 	AWeaponDefault* CurrentWeapon = nullptr;
-
-	UPROPERTY()
-	UDecalComponent* CurrentCursor = nullptr;
-	
+		
 	UPROPERTY(Replicated)
 	int32 CurrentIndexWeapon = 0;
 
@@ -91,15 +54,11 @@ public:
 	ATDSCharacter();
 
 	FTimerHandle TimerHandle_RagDollTimer;
-
-	// Called every frame.
+	
 	virtual void Tick(float DeltaSeconds) override;
-
-	virtual void SetupPlayerInputComponent(class UInputComponent* InputComponent) override;
-
-	/** Returns TopDownCameraComponent subobject **/
+	
 	FORCEINLINE class UCameraComponent* GetTopDownCameraComponent() const { return TopDownCameraComponent; }
-	/** Returns CameraBoom subobject **/
+
 	FORCEINLINE class USpringArmComponent* GetCameraBoom() const { return CameraBoom; }
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Inventory", meta = (AllowPrivateAccess = "true"))
@@ -110,15 +69,7 @@ public:
 	
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Effect", meta = (AllowPrivateAccess = "true"))
 	class UTDS_EffectComponent* EffectComponent;
-
-	//Cursor material on decal
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
-	UMaterialInterface* CursorMaterial = nullptr;
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor")
-	FVector CursorSize = FVector(20.0f, 40.0f, 40.0f);
-	
-	//Default move rule and state character
+		
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Movement")
 	FCharacterSpeed MovementInfo;
 
@@ -139,16 +90,23 @@ private:
 	class USpringArmComponent* CameraBoom;
 
 public:
-	
-	UFUNCTION()
-	void MovementTick(float DeltaTime);
-	
+		
 	void CharacterUpdate();
 	
-	void ChangeMovementState();
-
 	void AttackCharEvent(bool bIsFiring);
 
+	void RequestSwitchWeaponByIndex(int32 Id);
+	
+	void SetAimLocation(FVector Location);
+	
+	void SetFiring(bool bIsFiring);
+	
+	void RequestReload();
+	void RequestAbility();
+	void RequestDropWeapon();
+	
+	void RequestSwitchNextWeapon();
+	void RequestSwitchPreviousWeapon();
 		
 	UFUNCTION()
 	void InitWeapon(FName IdWeaponName, FAdditionalWeaponInfo WeaponAdditionalInfo, int32 NewCurrentIndexWeapon);
@@ -180,10 +138,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	AWeaponDefault* GetCurrentWeapon();
-	
-	UFUNCTION(BlueprintCallable, BlueprintPure)
-	UDecalComponent* GetCursorToWorld();
-	
+		
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	EMovementState GetMovementState();
 	

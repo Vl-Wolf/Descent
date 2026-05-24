@@ -25,7 +25,7 @@ protected:
 
 	virtual void BeginPlay() override;
 
-	bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
+	virtual bool ReplicateSubobjects(class UActorChannel* Channel, class FOutBunch* Bunch, FReplicationFlags* RepFlags) override;
 	
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
@@ -33,8 +33,6 @@ public:
 
 	virtual void Tick(float DeltaTime) override;
 	
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
 	virtual void RemoveEffect_Implementation(UTDS_StateEffect* RemoveEffect) override;
 
 	virtual void AddEffect_Implementation(UTDS_StateEffect* NewEffect) override;
