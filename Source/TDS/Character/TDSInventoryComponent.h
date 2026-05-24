@@ -77,6 +77,8 @@ public:
 	bool GetWeaponTypeByIndexSlot(int32 IndexSlot, EWeaponType& WeaponType);
 	
 	bool GetWeaponTypeByNameWeapon(FName IdWeaponName, EWeaponType& WeaponType);
+	
+	int32 CountAvailableWeapons() const;
 
 	UFUNCTION(BlueprintCallable)
 	void AmmoSlotChangeValue(EWeaponType TypeWeapon, int32 CountChangeAmmo);

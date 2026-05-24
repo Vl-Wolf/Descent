@@ -5,73 +5,58 @@
 
 bool UTDSGameInstance::GetWeaponInfoByName(FName NameWeapon, FWeaponInfo& OutInfo)
 {
-	bool bIsFind = false;
-	FWeaponInfo* WeaponInfoRow;
-
-	if (WeaponInfoTable)
+	if (!WeaponInfoTable)
 	{
-		WeaponInfoRow = WeaponInfoTable->FindRow<FWeaponInfo>(NameWeapon, "", false);
-		if (WeaponInfoRow)
-		{
-			bIsFind = true;
-			OutInfo = *WeaponInfoRow;
-		}
+		UE_LOG(LogTemp, Warning, TEXT("UTDSGameInstance::GetWeaponInfoByName - WeaponTable - NULL"));
+		return false;
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UTDSGameInstance::GetWeaponInfoByName - WeaponTable -NULL"));
-	}
+	
+	FWeaponInfo* WeaponInfoRow = WeaponInfoTable->FindRow<FWeaponInfo>(NameWeapon, "", false);
+	if (!WeaponInfoRow)
+		return false;
 
-	return bIsFind;
+	OutInfo = *WeaponInfoRow;
+	return true;
 }
 
 bool UTDSGameInstance::GetDropItemInfoByWeaponName(FName NameItem, FDropItem& OutInfo)
 {
-	bool bIsFind = false;
-
-	if (DropItemInfoTable)
+	if (!DropItemInfoTable)
 	{
-		FDropItem* DropItemInfoRow;
-		TArray<FName>RowNames = DropItemInfoTable->GetRowNames();
-		int8 i = 0;
-		while (i < RowNames.Num() && !bIsFind)
+		UE_LOG(LogTemp, Warning, TEXT("UTDSGameInstance::GetDropInfoByName - DropItemInfoTable - NULL"));
+		return false;
+	}
+
+	TArray<FName>RowNames = DropItemInfoTable->GetRowNames();
+	for (const FName& RowName : RowNames)
+	{
+		FDropItem* DropItemInfoRow = DropItemInfoTable->FindRow<FDropItem>(RowName, "", false);
+		if (!DropItemInfoRow)
+			continue;
+		
+		if (DropItemInfoRow->WeaponInfo.NameItem == NameItem)
 		{
-			DropItemInfoRow = DropItemInfoTable->FindRow<FDropItem>(RowNames[i], "");
-			if (DropItemInfoRow->WeaponInfo.NameItem == NameItem)
-			{
-				OutInfo = (*DropItemInfoRow);
-				bIsFind = true;
-			}
-			i++;
+			OutInfo = *DropItemInfoRow;
+			return true;
 		}
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UTDSGameInstance::GetDropInfoByName - DropItemInfoTable -NULL"));
-	}
-
-	return bIsFind;
+	
+	return false;
 }
 
 bool UTDSGameInstance::GetDropItemInfoByName(FName NameItem, FDropItem& OutInfo)
 {
-	bool bIsFind = false;
-	FDropItem* DropItemInfoRow;
-
-	if (DropItemInfoTable)
+	if (!DropItemInfoTable)
 	{
-		DropItemInfoRow = DropItemInfoTable->FindRow<FDropItem>(NameItem, "", false);
-		if(DropItemInfoRow)
-		{
-			OutInfo = *DropItemInfoRow;
-			bIsFind = true;
-		
-		}
+		UE_LOG(LogTemp, Warning, TEXT("UTDSGameInstance::GetDropInfoByName - DropItemInfoTable - NULL"));
+		return false;
 	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("UTDSGameInstance::GetDropInfoByName - DropItemInfoTable -NULL"));
-	}
-
-	return bIsFind;
+	
+	FDropItem* DropItemInfoRow = DropItemInfoTable->FindRow<FDropItem>(NameItem, "", false);
+	if(!DropItemInfoRow)
+		return false;
+	
+	OutInfo = *DropItemInfoRow;
+	
+	return true;
 }
