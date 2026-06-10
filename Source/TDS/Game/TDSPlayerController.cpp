@@ -21,13 +21,10 @@ void ATDSPlayerController::PlayerTick(float DeltaTime)
 	if (!PlayerCharacter || !PlayerCharacter->GetIsAlive())
 		return;
 	
-	if (CursorDecal && IsLocalPlayerController())
-	{
-		FHitResult Hit;
-		GetHitResultUnderCursor(ECC_Visibility, true, Hit);
-		CursorDecal->SetWorldLocation(Hit.Location);
-		CursorDecal->SetWorldRotation(Hit.ImpactNormal.Rotation());
-	}
+	FVector2D MouseDelta;
+	GetInputMouseDelta(MouseDelta.X, MouseDelta.Y);
+	if (!MouseDelta.IsNearlyZero(0.5f))
+		bIsGamepadActive = false;
 	
 	PlayerCharacter->AddMovementInput(FVector::ForwardVector, AxisX);
 	PlayerCharacter->AddMovementInput(FVector::RightVector, AxisY);
@@ -44,8 +41,74 @@ void ATDSPlayerController::PlayerTick(float DeltaTime)
 			PlayerCharacter->SetActorRotationByYaw_OnServer(Yaw);
 		}
 	}
+	else if (bIsGamepadActive)
+	{
+		FRotationMatrix CamMatrix(PlayerCameraManager->GetCameraRotation());
+		FVector CamForward = CamMatrix.GetScaledAxis(EAxis::X);
+		FVector CamRight   = CamMatrix.GetScaledAxis(EAxis::Y);
+		CamForward.Z = 0.f;
+		CamRight.Z   = 0.f;
+		
+		if (!CamForward.Normalize()) 
+			CamForward = FVector::ForwardVector;
+		
+		if (!CamRight.Normalize())   
+			CamRight   = FVector::RightVector;
+
+		FVector StickDir = CamRight * LookAxisX - CamForward * LookAxisY;
+		
+		if (!StickDir.IsNearlyZero(0.01f))
+		{
+			FVector CharLoc = PlayerCharacter->GetActorLocation();
+			FVector FlatTarget = CharLoc + StickDir.GetSafeNormal() * VirtualCursorRadius;
+			
+			FHitResult SurfaceHit;
+			FVector TraceStart = FVector(FlatTarget.X, FlatTarget.Y, CharLoc.Z + 500.f);
+			FVector TraceEnd   = FVector(FlatTarget.X, FlatTarget.Y, CharLoc.Z - 500.f);
+			
+			bool bHit = GetWorld()->LineTraceSingleByChannel(SurfaceHit, TraceStart, TraceEnd,ECC_Visibility);
+
+			if (bHit)
+			{
+				VirtualCursorLocation = SurfaceHit.Location;
+				
+				if (CursorDecal && IsLocalPlayerController())
+				{
+					CursorDecal->SetWorldLocation(SurfaceHit.Location);
+					CursorDecal->SetWorldRotation(SurfaceHit.ImpactNormal.Rotation());
+				}
+			}
+			else
+			{
+				VirtualCursorLocation = FVector(FlatTarget.X, FlatTarget.Y, CharLoc.Z);
+				if (CursorDecal && IsLocalPlayerController())
+				{
+					CursorDecal->SetWorldLocation(VirtualCursorLocation);
+					CursorDecal->SetWorldRotation(FRotator(-90.f, 0.f, 0.f));
+				}
+			}
+		}
+		else if (VirtualCursorLocation.IsZero())
+		{
+			VirtualCursorLocation = PlayerCharacter->GetActorLocation() + PlayerCharacter->GetActorForwardVector() * VirtualCursorRadius;
+		}
+		
+		float Yaw = UKismetMathLibrary::FindLookAtRotation(PlayerCharacter->GetActorLocation(), VirtualCursorLocation).Yaw;
+		
+		PlayerCharacter->SetActorRotation(FQuat(FRotator(0.f, Yaw, 0.f)));
+		PlayerCharacter->SetActorRotationByYaw_OnServer(Yaw);
+		PlayerCharacter->SetAimLocation(VirtualCursorLocation);
+	}
 	else
 	{
+		if (CursorDecal && IsLocalPlayerController())
+		{
+			FHitResult Hit;
+			GetHitResultUnderCursor(ECC_Visibility, true, Hit);
+			CursorDecal->SetWorldLocation(Hit.Location);
+			CursorDecal->SetWorldRotation(Hit.ImpactNormal.Rotation());
+		}
+		
 		FHitResult HitResult;
 		GetHitResultUnderCursor(ECC_GameTraceChannel1, true, HitResult);
 		float Yaw = UKismetMathLibrary::FindLookAtRotation(PlayerCharacter->GetActorLocation(), HitResult.Location).Yaw;
@@ -85,6 +148,9 @@ void ATDSPlayerController::SetupInputComponent()
 	InputComponent->BindAction(TEXT("AbilityAction"), EInputEvent::IE_Pressed, this, &ATDSPlayerController::InputAbility);
 
 	InputComponent->BindAction(TEXT("DropCurrentWeapon"), EInputEvent::IE_Pressed, this, &ATDSPlayerController::InputDropWeapon);
+	
+	InputComponent->BindAxis(TEXT("LookRight"), this, &ATDSPlayerController::OnLookRight);
+	InputComponent->BindAxis(TEXT("LookUp"), this, &ATDSPlayerController::OnLookUp);
 	
 	
 	InputComponent->BindKey(EKeys::One, IE_Pressed, this, &ATDSPlayerController::InputSwitchToSlot<0>);
@@ -237,4 +303,20 @@ EMovementState ATDSPlayerController::DetermineMovementState() const
 		return EMovementState::Aim_State;
 	
 	return EMovementState::Run_State;
+}
+
+void ATDSPlayerController::OnLookRight(float Value)
+{
+	if (FMath::Abs(Value) > 0.1f)
+		bIsGamepadActive = true;
+	
+	LookAxisX = Value;
+}
+
+void ATDSPlayerController::OnLookUp(float Value)
+{
+	if (FMath::Abs(Value) > 0.1f)
+		bIsGamepadActive = true;
+	
+	LookAxisY = Value;
 }

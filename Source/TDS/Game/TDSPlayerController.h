@@ -76,6 +76,20 @@ private:
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Cursor", meta=(AllowPrivateAccess = "true"))
 	FVector CursorSize = FVector(20.0f, 40.0f, 40.0f);
+	
+	float LookAxisX = 0.0f;
+	float LookAxisY = 0.0f;
+	
+	bool bIsGamepadActive = false;
+	
+	void OnLookRight(float Value);
+	void OnLookUp(float Value);
+	
+	FVector VirtualCursorLocation = FVector::ZeroVector;
+	
+	UPROPERTY(EditDefaultsOnly, Category = "Cursor")
+	float VirtualCursorRadius = 500.f;
+	
 };
 
 
