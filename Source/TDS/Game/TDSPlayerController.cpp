@@ -29,7 +29,10 @@ void ATDSPlayerController::PlayerTick(float DeltaTime)
 	PlayerCharacter->AddMovementInput(FVector::ForwardVector, AxisX);
 	PlayerCharacter->AddMovementInput(FVector::RightVector, AxisY);
 	
+	const FVector CharacterLocation = PlayerCharacter->GetActorLocation();
+	
 	EMovementState CurrentMovementState = PlayerCharacter->GetMovementState();
+	
 	if (CurrentMovementState == EMovementState::Sprint_State)
 	{
 		FVector Direction = FVector(AxisX, AxisY, 0.0f);
@@ -40,57 +43,35 @@ void ATDSPlayerController::PlayerTick(float DeltaTime)
 			PlayerCharacter->SetActorRotation(FQuat(FRotator(0.0f, Yaw, 0.0f)));
 			PlayerCharacter->SetActorRotationByYaw_OnServer(Yaw);
 		}
+		
+		FVector FlatTarget = CharacterLocation + PlayerCharacter->GetActorForwardVector() * VirtualCursorRadius;
+		VirtualCursorLocation = TraceVirtualCursorToSurface(FlatTarget, CharacterLocation);
 	}
 	else if (bIsGamepadActive)
 	{
-		FRotationMatrix CamMatrix(PlayerCameraManager->GetCameraRotation());
-		FVector CamForward = CamMatrix.GetScaledAxis(EAxis::X);
-		FVector CamRight   = CamMatrix.GetScaledAxis(EAxis::Y);
-		CamForward.Z = 0.f;
-		CamRight.Z   = 0.f;
+		FRotationMatrix CameraMatrix(PlayerCameraManager->GetCameraRotation());
+		FVector CameraForward = CameraMatrix.GetScaledAxis(EAxis::X);
+		FVector CameraRight   = CameraMatrix.GetScaledAxis(EAxis::Y);
+		CameraForward.Z = 0.f;
+		CameraRight.Z   = 0.f;
 		
-		if (!CamForward.Normalize()) 
-			CamForward = FVector::ForwardVector;
+		if (!CameraForward.Normalize()) 
+			CameraForward = FVector::ForwardVector;
 		
-		if (!CamRight.Normalize())   
-			CamRight   = FVector::RightVector;
+		if (!CameraRight.Normalize())   
+			CameraRight   = FVector::RightVector;
 
-		FVector StickDir = CamRight * LookAxisX - CamForward * LookAxisY;
+		FVector StickDir = CameraRight * LookAxisX - CameraForward * LookAxisY;
 		
 		if (!StickDir.IsNearlyZero(0.01f))
 		{
-			FVector CharLoc = PlayerCharacter->GetActorLocation();
-			FVector FlatTarget = CharLoc + StickDir.GetSafeNormal() * VirtualCursorRadius;
-			
-			FHitResult SurfaceHit;
-			FVector TraceStart = FVector(FlatTarget.X, FlatTarget.Y, CharLoc.Z + 500.f);
-			FVector TraceEnd   = FVector(FlatTarget.X, FlatTarget.Y, CharLoc.Z - 500.f);
-			
-			bool bHit = GetWorld()->LineTraceSingleByChannel(SurfaceHit, TraceStart, TraceEnd,ECC_Visibility);
-
-			if (bHit)
-			{
-				VirtualCursorLocation = SurfaceHit.Location;
-				
-				if (CursorDecal && IsLocalPlayerController())
-				{
-					CursorDecal->SetWorldLocation(SurfaceHit.Location);
-					CursorDecal->SetWorldRotation(SurfaceHit.ImpactNormal.Rotation());
-				}
-			}
-			else
-			{
-				VirtualCursorLocation = FVector(FlatTarget.X, FlatTarget.Y, CharLoc.Z);
-				if (CursorDecal && IsLocalPlayerController())
-				{
-					CursorDecal->SetWorldLocation(VirtualCursorLocation);
-					CursorDecal->SetWorldRotation(FRotator(-90.f, 0.f, 0.f));
-				}
-			}
+			FVector FlatTarget = CharacterLocation + StickDir.GetSafeNormal() * VirtualCursorRadius;
+			VirtualCursorLocation = TraceVirtualCursorToSurface(FlatTarget, CharacterLocation);
 		}
 		else if (VirtualCursorLocation.IsZero())
 		{
-			VirtualCursorLocation = PlayerCharacter->GetActorLocation() + PlayerCharacter->GetActorForwardVector() * VirtualCursorRadius;
+			FVector FlatTarget = CharacterLocation + PlayerCharacter->GetActorForwardVector() * VirtualCursorRadius;
+			VirtualCursorLocation = TraceVirtualCursorToSurface(FlatTarget, CharacterLocation);
 		}
 		
 		float Yaw = UKismetMathLibrary::FindLookAtRotation(PlayerCharacter->GetActorLocation(), VirtualCursorLocation).Yaw;
@@ -319,4 +300,32 @@ void ATDSPlayerController::OnLookUp(float Value)
 		bIsGamepadActive = true;
 	
 	LookAxisY = Value;
+}
+
+FVector ATDSPlayerController::TraceVirtualCursorToSurface(const FVector& FlatTarget, const FVector& CharacterLocation)
+{
+	FHitResult SurfaceHit;
+	
+	FVector TraceStart = FVector(FlatTarget.X, FlatTarget.Y, CharacterLocation.Z + 500.0f);
+	FVector TraceEnd = FVector(FlatTarget.X, FlatTarget.Y, CharacterLocation.Z - 500.0f);
+	
+	if (GetWorld()->LineTraceSingleByChannel(SurfaceHit, TraceStart, TraceEnd, ECC_Visibility))
+	{
+		if (CursorDecal && IsLocalPlayerController())
+		{
+			CursorDecal->SetWorldLocation(SurfaceHit.Location);
+			CursorDecal->SetWorldRotation(SurfaceHit.ImpactNormal.Rotation());
+		}
+		
+		return SurfaceHit.Location;
+	}
+	
+	FVector Fallback = FVector(FlatTarget.X, FlatTarget.Y, CharacterLocation.Z);
+	if (CursorDecal && IsLocalPlayerController())
+	{
+		CursorDecal->SetWorldLocation(Fallback);
+		CursorDecal->SetWorldRotation(FRotator(-90.0f, 0.0f, 0.0f));
+	}
+	
+	return Fallback;
 }

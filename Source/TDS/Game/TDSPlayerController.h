@@ -90,6 +90,8 @@ private:
 	UPROPERTY(EditDefaultsOnly, Category = "Cursor")
 	float VirtualCursorRadius = 500.f;
 	
+	FVector TraceVirtualCursorToSurface(const FVector& FlatTarget, const FVector& CharacterLocation);
+	
 };
 
 
