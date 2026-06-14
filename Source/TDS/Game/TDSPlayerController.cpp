@@ -144,20 +144,13 @@ void ATDSPlayerController::SetupInputComponent()
 void ATDSPlayerController::OnPossess(APawn* InPawn)
 {
 	Super::OnPossess(InPawn);
-	
-	if (GetWorld() && GetWorld()->GetNetMode() != NM_DedicatedServer)
-	{
-		if (CursorMaterial && IsLocalPlayerController())
-		{			
-			CursorDecal = UGameplayStatics::SpawnDecalAtLocation(GetWorld(), CursorMaterial, CursorSize, FVector(0));
-		}
-	}
+		
+	InitCursor_Client(true);
 }
 
 void ATDSPlayerController::OnUnPossess()
 {
-	if (CursorDecal)
-		CursorDecal->SetVisibility(false);
+	InitCursor_Client(false);
 	
 	Super::OnUnPossess();
 }
@@ -328,4 +321,25 @@ FVector ATDSPlayerController::TraceVirtualCursorToSurface(const FVector& FlatTar
 	}
 	
 	return Fallback;
+}
+
+void ATDSPlayerController::InitCursor_Client_Implementation(bool bIsShow)
+{
+	if (!CursorMaterial) return;
+	
+	if (!bIsShow)
+	{
+		if (CursorDecal)
+			CursorDecal->SetVisibility(false);
+	}
+	
+	if (CursorDecal)
+	{
+		CursorDecal->DestroyComponent();
+		CursorDecal = nullptr;
+	}
+
+	CursorDecal = UGameplayStatics::SpawnDecalAtLocation(
+		GetWorld(), CursorMaterial, CursorSize, FVector::ZeroVector);
+
 }

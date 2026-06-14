@@ -366,35 +366,63 @@ void UTDSInventoryComponent::SwitchWeaponEvent_OnServer_Implementation(FName Wea
 
 void UTDSInventoryComponent::WeaponAdditionalInfoChangeEvent_Multicast_Implementation(int32 IndexWeapon, FAdditionalWeaponInfo AdditionalWeaponInfo)
 {
+	const APawn* Owner = Cast<APawn>(GetOwner());
+	if (!Owner || !Owner->IsLocallyControlled())
+		return;
+	
 	OnWeaponAdditionalInfoChange.Broadcast(IndexWeapon, AdditionalWeaponInfo);
 }
 
 void UTDSInventoryComponent::AmmoChangeEvent_Multicast_Implementation(EWeaponType TypeWeapon, int32 Count)
 {
+	const APawn* Owner = Cast<APawn>(GetOwner());
+	if (!Owner || !Owner->IsLocallyControlled())
+		return;
+	
 	OnAmmoChange.Broadcast(TypeWeapon, Count);
 }
 
 void UTDSInventoryComponent::WeaponAmmoEmptyEvent_Multicast_Implementation(EWeaponType TypeWeapon)
 {
+	const APawn* Owner = Cast<APawn>(GetOwner());
+	if (!Owner || !Owner->IsLocallyControlled())
+		return;
+	
 	OnWeaponAmmoEmpty.Broadcast(TypeWeapon);
 }
 
 void UTDSInventoryComponent::WeaponAmmoAvailableEvent_Multicast_Implementation(EWeaponType TypeWeapon)
 {
+	const APawn* Owner = Cast<APawn>(GetOwner());
+	if (!Owner || !Owner->IsLocallyControlled())
+		return;
+	
 	OnWeaponAmmoAvailable.Broadcast(TypeWeapon);
 }
 
 void UTDSInventoryComponent::UpdateWeaponSlotsEvent_Multicast_Implementation(int32 IndexSlotChange, FWeaponSlot NewInfo)
 {
+	const APawn* Owner = Cast<APawn>(GetOwner());
+	if (!Owner || !Owner->IsLocallyControlled())
+		return;
+	
 	OnUpdateWeaponSlots.Broadcast(IndexSlotChange, NewInfo);
 }
 
 void UTDSInventoryComponent::WeaponNotHaveRoundEvent_Multicast_Implementation(int32 IndexSlotWeapon)
 {
+	const APawn* Owner = Cast<APawn>(GetOwner());
+	if (!Owner || !Owner->IsLocallyControlled())
+		return;
+	
 	OnWeaponNotHaveRound.Broadcast(IndexSlotWeapon);
 }
 
 void UTDSInventoryComponent::WeaponHaveRoundEvent_Multicast_Implementation(int32 IndexSlotWeapon)
 {
+	const APawn* Owner = Cast<APawn>(GetOwner());
+	if (!Owner || !Owner->IsLocallyControlled())
+		return;
+	
 	OnWeaponHaveRound.Broadcast(IndexSlotWeapon);
 }

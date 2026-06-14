@@ -92,6 +92,9 @@ private:
 	
 	FVector TraceVirtualCursorToSurface(const FVector& FlatTarget, const FVector& CharacterLocation);
 	
+	UFUNCTION(Client, Reliable)
+	void InitCursor_Client(bool bIsShow);
+	
 };
 
 
